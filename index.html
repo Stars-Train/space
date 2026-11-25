@@ -1,0 +1,1951 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fichas de RPG</title>
+<!-- Pré-conexão com Firebase e Google Fonts para carregar mais rápido -->
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firebaseapp.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<!-- Verificação de sessão imediata, antes de carregar qualquer JS -->
+<script>
+  if (!sessionStorage.getItem("logado")) {
+    window.location.replace("login.html");
+  }
+</script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0b12;
+    --bg2: #130d1a;
+    --bg3: #160e1e;
+    --border: #2e1f3a;
+    --border2: #6b1a45;
+    --gold: #c4547a;
+    --gold2: #2e2459;
+    --gold-dim: #ad0e49;
+    --text: #ffffff;
+    --text2: #7a3060;
+    --text3: #e8d0da;
+    --red: #4a2060;
+    --red2: #8a4090;
+    --radius: 6px;
+  }
+
+  body {
+    font-family: 'Crimson Text', Georgia, serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 16px;
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 3px; }
+
+  input, textarea {
+    font-family: 'Crimson Text', Georgia, serif;
+    font-size: 15px;
+    color: var(--text);
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 6px 10px;
+    width: 100%;
+    transition: border-color 0.2s;
+  }
+  input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--gold-dim);
+    background: var(--bg3);
+  }
+  input[type="number"] { -moz-appearance: textfield; }
+  input[type="number"]::-webkit-inner-spin-button { opacity: 0.3; }
+
+  body.readonly input,
+  body.readonly textarea {
+    opacity: 0.85;
+    background: var(--bg);
+    border-color: var(--border);
+    cursor: text;
+    user-select: text;
+    -webkit-user-select: text;
+  }
+  body.readonly .btn-add,
+  body.readonly .btn-danger,
+  body.readonly .perk-remove,
+  body.readonly #addExtraBtn,
+  body.readonly .nav-footer .btn-primary[data-save],
+  body.readonly .home-actions .btn-primary,
+  body.readonly .foto-actions {
+    display: none !important;
+  }
+  .readonly-badge {
+    display: none;
+    background: #2a1a0a;
+    border: 1px solid var(--gold-dim);
+    color: var(--gold-dim);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    padding: 4px 10px;
+    border-radius: var(--radius);
+  }
+  body.readonly .readonly-badge { display: inline-block; }
+
+  button {
+    font-family: 'Crimson Text', Georgia, serif;
+    cursor: pointer;
+    border-radius: var(--radius);
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    padding: 7px 14px;
+    font-size: 14px;
+    transition: all 0.18s;
+  }
+  button:hover { background: var(--bg3); color: var(--gold2); border-color: var(--gold-dim); }
+  button:active { transform: scale(0.97); }
+
+  .btn-primary {
+    background: var(--bg3);
+    border-color: var(--gold-dim);
+    color: var(--gold);
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+  }
+  .btn-primary:hover { background: #2a2418; color: var(--gold2); border-color: var(--gold); }
+
+  .btn-icon {
+    padding: 5px 9px;
+    font-size: 15px;
+    min-width: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-danger { color: var(--red2); border-color: transparent; }
+  .btn-danger:hover { background: rgba(139,32,32,0.15); border-color: var(--red); color: #e06060; }
+  .btn-add {
+    border-style: dashed;
+    border-color: var(--border2);
+    color: var(--text3);
+    font-size: 13px;
+    width: 100%;
+    padding: 6px;
+    margin-top: 4px;
+  }
+  .btn-add:hover { color: var(--gold); border-color: var(--gold-dim); }
+  .btn-logout {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--text3);
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+  .btn-logout:hover { color: var(--red2); border-color: var(--red); background: rgba(139,32,32,0.1); }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+  /* Mostra home imediatamente enquanto JS carrega */
+  #home { display: block; }
+  #home:not(.active) { display: none; }
+
+  #home { padding: 1.5rem; max-width: 700px; margin: 0 auto; }
+
+  .home-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .home-title {
+    font-family: 'Cinzel', serif;
+    font-size: 20px;
+    color: var(--gold);
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .home-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .session-info {
+    font-size: 12px;
+    color: var(--text3);
+    font-style: italic;
+  }
+
+  /* Nav buttons row */
+  .nav-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+  }
+  .nav-btn {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text3);
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    padding: 8px 14px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.18s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .nav-btn:hover { border-color: var(--gold-dim); color: var(--gold); background: var(--bg3); }
+  .nav-btn.mestre-only { border-color: var(--border2); color: var(--gold-dim); }
+  .nav-btn.mestre-only:hover { border-color: var(--gold); color: var(--gold); background: var(--bg3); }
+
+  .ficha-list { display: flex; flex-direction: column; gap: 8px; }
+  .ficha-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: border-color 0.2s;
+  }
+  .ficha-item:hover { border-color: var(--border2); }
+  .ficha-item-left { display: flex; align-items: center; gap: 12px; }
+  .ficha-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    color: var(--gold-dim);
+    flex-shrink: 0;
+  }
+  .ficha-name { font-size: 16px; font-weight: 600; color: var(--text); }
+  .ficha-meta { font-size: 13px; color: var(--text3); margin-top: 2px; }
+  .ficha-actions { display: flex; gap: 6px; }
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text3);
+    font-style: italic;
+    font-size: 15px;
+  }
+  .empty-icon { font-size: 36px; margin-bottom: 0.75rem; opacity: 0.3; }
+
+  .editor-wrap { padding: 1.25rem; max-width: 700px; margin: 0 auto; }
+  .editor-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.875rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .editor-title { font-family: 'Cinzel', serif; font-size: 16px; color: var(--gold); letter-spacing: 0.5px; }
+  .page-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 1.25rem; }
+  .page-tab {
+    flex: 1; min-width: 70px; text-align: center;
+    padding: 8px 6px; font-family: 'Cinzel', serif; font-size: 11px;
+    letter-spacing: 0.4px; color: var(--text3); background: var(--bg2);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    cursor: pointer; transition: all 0.18s;
+  }
+  .page-tab:hover { border-color: var(--gold-dim); color: var(--gold); }
+  .page-tab.active { background: var(--bg3); border-color: var(--gold-dim); color: var(--gold); }
+
+  /* Foto do personagem */
+  /* ── GALERIA DE FOTOS ── */
+  .galeria-wrap { margin-bottom: 14px; }
+  .galeria-fotos { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .galeria-thumb {
+    width: 72px; height: 72px; border-radius: 8px; overflow: hidden;
+    border: 1px solid var(--border2); cursor: pointer; position: relative;
+    flex-shrink: 0; background: var(--bg2);
+  }
+  .galeria-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .galeria-thumb:hover .galeria-del { opacity: 1; }
+  .galeria-del {
+    position: absolute; top: 2px; right: 2px;
+    background: rgba(0,0,0,0.7); color: #fff; border: none;
+    border-radius: 50%; width: 18px; height: 18px; font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; opacity: 0; transition: opacity 0.2s; padding: 0;
+    line-height: 1;
+  }
+  .galeria-add-btn {
+    width: 72px; height: 72px; border-radius: 8px;
+    border: 1px dashed var(--border2); background: var(--bg2);
+    color: var(--gold-dim); font-size: 24px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.18s; flex-shrink: 0;
+  }
+  .galeria-add-btn:hover { border-color: var(--gold); color: var(--gold); background: var(--bg3); }
+
+  /* Avatar na lista — múltiplas fotos */
+  .avatar-fotos { display: flex; gap: 4px; flex-wrap: wrap; }
+  .avatar-foto {
+    width: 40px; height: 40px; border-radius: 50%; overflow: hidden;
+    border: 1px solid var(--border2); cursor: pointer; flex-shrink: 0;
+    background: var(--bg2);
+  }
+  .avatar-foto img { width: 100%; height: 100%; object-fit: cover; }
+  .avatar-initials {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--bg3); border: 1px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cinzel', serif; font-size: 14px; color: var(--gold-dim); flex-shrink: 0;
+  }
+
+  /* ── LIGHTBOX ── */
+  .lightbox {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.92); z-index: 2000;
+    align-items: center; justify-content: center; flex-direction: column;
+  }
+  .lightbox.open { display: flex; }
+  .lightbox-img-wrap {
+    position: relative; overflow: hidden;
+    width: 90vw; height: 80vh;
+    display: flex; align-items: center; justify-content: center;
+    cursor: grab;
+  }
+  .lightbox-img-wrap:active { cursor: grabbing; }
+  .lightbox-img {
+    max-width: none; max-height: none;
+    transform-origin: center center;
+    user-select: none; pointer-events: none;
+    transition: transform 0.05s;
+  }
+  .lightbox-controls {
+    display: flex; gap: 10px; margin-top: 12px; align-items: center;
+  }
+  .lightbox-controls button {
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    color: #fff; padding: 6px 14px; border-radius: 6px; font-size: 18px;
+  }
+  .lightbox-close {
+    position: absolute; top: 16px; right: 16px;
+    background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2);
+    color: #fff; width: 36px; height: 36px; border-radius: 50%;
+    font-size: 18px; cursor: pointer; z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .lightbox-nav {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2);
+    color: #fff; width: 36px; height: 36px; border-radius: 50%;
+    font-size: 18px; cursor: pointer; z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .lightbox-prev { left: 8px; }
+  .lightbox-next { right: 8px; }
+
+  /* ── CROP MODAL ── */
+  .crop-modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.95); z-index: 3000;
+    align-items: center; justify-content: center; flex-direction: column;
+  }
+  .crop-modal.open { display: flex; }
+  .crop-title { font-family: 'Cinzel', serif; color: var(--gold); font-size: 14px; margin-bottom: 12px; letter-spacing: 0.5px; }
+  .crop-area {
+    width: 90vw; max-width: 400px; height: 300px;
+    overflow: hidden; position: relative; border: 2px solid var(--border2);
+    border-radius: 8px; background: #000; cursor: grab;
+  }
+  .crop-area:active { cursor: grabbing; }
+  .crop-img {
+    position: absolute; transform-origin: 0 0;
+    user-select: none; pointer-events: none;
+  }
+  .crop-controls { display: flex; gap: 10px; margin-top: 12px; align-items: center; }
+  .crop-controls button { padding: 8px 18px; font-size: 15px; }
+  .crop-zoom { display: flex; align-items: center; gap: 8px; color: #fff; font-size: 13px; }
+  .crop-zoom input[type=range] { width: 120px; }
+
+  .field-group { display: flex; flex-direction: column; gap: 4px; }
+  .field-label { font-family: 'Cinzel', serif; font-size: 10px; color: var(--text3); letter-spacing: 0.8px; text-transform: uppercase; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .full-width { grid-column: 1 / -1; }
+
+  .section-divider {
+    display: flex; align-items: center; gap: 10px;
+    margin: 14px 0 10px;
+    color: var(--gold-dim);
+    font-family: 'Cinzel', serif;
+    font-size: 11px; letter-spacing: 0.8px;
+  }
+  .section-divider::before, .section-divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  .vida-stack { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+  .extra-fields { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+  .extra-row { display: flex; gap: 6px; align-items: center; }
+  .extra-row input { flex: 1; }
+
+  .nav-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 1.25rem; padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .card-section {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px; margin-bottom: 12px;
+  }
+  .card-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .card-section-title { font-family: 'Cinzel', serif; font-size: 12px; color: var(--gold-dim); letter-spacing: 0.6px; }
+  .perk-list { display: flex; flex-direction: column; gap: 6px; }
+  .perk-item { display: flex; gap: 6px; align-items: center; }
+  .perk-item input { flex: 1; }
+  .perk-remove {
+    padding: 3px 7px; color: var(--red2);
+    background: transparent; border: 1px solid transparent;
+    border-radius: var(--radius); font-size: 16px; line-height: 1;
+  }
+  .perk-remove:hover { background: rgba(139,32,32,0.15); border-color: var(--red); }
+
+  .table-wrap { overflow-x: auto; margin-bottom: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  thead th {
+    font-family: 'Cinzel', serif; font-size: 10px; color: var(--text3);
+    letter-spacing: 0.7px; text-align: left; padding: 6px 8px;
+    border-bottom: 1px solid var(--border); background: var(--bg2);
+  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--bg3); }
+  tbody td { padding: 3px 4px; }
+  tbody td input, tbody td textarea {
+    border: none; background: transparent; font-size: 14px; padding: 8px 6px; border-radius: 4px;
+    font-family: 'Crimson Text', Georgia, serif; width: 100%; resize: vertical;
+    min-height: 44px; line-height: 1.4;
+  }
+  tbody td input:focus, tbody td textarea:focus { background: var(--bg3); border: 1px solid var(--border2); }
+  tbody td:last-child { width: 36px; text-align: center; }
+  tbody td { padding: 4px; vertical-align: top; }
+
+  /* ── CARDS DE HABILIDADES ── */
+  .hab-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+  .hab-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 10px 12px;
+    transition: border-color 0.2s;
+  }
+  .hab-card:hover { border-color: var(--border2); }
+  .hab-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; min-width: 0; overflow: hidden; }
+  .hab-nome {
+    font-family: 'Cinzel', serif; font-size: 13px; color: var(--gold);
+    letter-spacing: 0.3px; flex: 1; min-width: 0;
+    background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: var(--radius); padding: 5px 8px; width: auto;
+  }
+  .hab-nome:focus { outline: none; border-color: var(--gold-dim); background: var(--bg2); }
+  .hab-tipo {
+    font-size: 11px; font-family: 'Cinzel', serif; letter-spacing: 0.4px;
+    color: var(--text3); background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: 4px; padding: 2px 8px; white-space: nowrap;
+    width: 70px; flex-shrink: 0; text-align: center;
+  }
+  .hab-tipo:focus { outline: none; border-color: var(--gold-dim); }
+  .hab-efeito {
+    font-size: 14px; color: var(--text); background: transparent;
+    border: none; border-left: 2px solid var(--border2);
+    padding: 4px 8px; width: 100%; resize: vertical; min-height: 48px;
+    line-height: 1.5; font-family: 'Crimson Text', Georgia, serif;
+  }
+  .hab-efeito:focus { outline: none; border-left-color: var(--gold-dim); background: var(--bg3); border-radius: 0 4px 4px 0; }
+  .hab-del {
+    color: var(--red2); background: transparent; border: none;
+    font-size: 16px; padding: 0 4px; flex-shrink: 0; cursor: pointer;
+    line-height: 1;
+  }
+  .hab-del:hover { color: #e06060; }
+
+  #toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--bg3); border: 1px solid var(--gold-dim);
+    color: var(--gold); font-family: 'Cinzel', serif;
+    font-size: 13px; letter-spacing: 0.5px;
+    padding: 10px 18px; border-radius: var(--radius);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s; z-index: 9999;
+  }
+
+  .loading-overlay {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cinzel', serif; color: var(--gold-dim);
+    font-size: 14px; letter-spacing: 1px;
+    z-index: 9998;
+  }
+
+  @media (max-width: 500px) {
+    .grid-3 { grid-template-columns: 1fr 1fr; }
+    .grid-4 { grid-template-columns: 1fr 1fr; }
+    .home-title { font-size: 17px; }
+  }
+
+  /* ===== Picker de Perícias Especiais ===== */
+  .pp-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:10000;align-items:center;justify-content:center;padding:16px}
+  .pp-overlay.open{display:flex}
+  .pp-box{background:#100f08;border:1px solid #604808;border-radius:8px;width:100%;max-width:520px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden}
+  .pp-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #302808;font-family:'Cinzel',serif;color:#c9a84c;font-size:14px;letter-spacing:.8px}
+  .pp-search{margin:10px 16px 0;width:calc(100% - 32px)}
+  .pp-list{padding:12px 16px;overflow-y:auto;display:flex;flex-wrap:wrap;gap:8px}
+  .pp-chip{padding:6px 12px;border:1px solid #604808;border-radius:16px;background:transparent;color:#e8d9a8;font-size:14px;cursor:pointer;transition:all .15s}
+  .pp-chip:hover{background:#201808;border-color:#c9a84c;color:#c9a84c}
+  .pp-chip.added{opacity:.35;pointer-events:none;text-decoration:line-through}
+  .pp-foot{display:flex;justify-content:space-between;gap:8px;padding:10px 16px;border-top:1px solid #302808}
+
+  .pp-novo{display:flex;gap:8px;padding:10px 16px}
+  .pp-novo input{flex:1}
+  /* ===== Gasto ===== */
+  .hab-tabs{display:flex;gap:4px;margin-bottom:6px}
+  .hab-tab{font-size:11px;font-family:'Cinzel',serif;padding:3px 10px;border-radius:4px 4px 0 0}
+  .hab-tab.on{background:var(--bg3);color:var(--gold);border-color:var(--gold-dim)}
+  .hab-gasto{display:none;grid-template-columns:90px 1fr;gap:6px}
+  .hab-gasto input:last-child{grid-column:1/-1}
+  .hab-card.t-gasto .hab-gasto{display:grid}.hab-card.t-gasto .hab-efeito{display:none}
+
+  /* ── CLASSES AUTOMÁTICAS ── */
+  .class-select { font-family:'Crimson Text',Georgia,serif; font-size:15px; color:var(--text); background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:8px 10px; width:100%; }
+  .auto-note { color:var(--text3); font-size:12px; opacity:.82; margin-top:6px; }
+  .auto-perk-tag { flex-shrink:0; font-family:'Cinzel',serif; font-size:9px; letter-spacing:.4px; color:var(--gold-dim); border:1px solid var(--border2); border-radius:12px; padding:2px 6px; }
+  .class-mod-list { display:flex; flex-wrap:wrap; gap:6px; min-height:24px; }
+  .class-mod-chip { border-radius:14px; padding:4px 10px; font-size:13px; border:1px solid var(--border); background:var(--bg3); }
+  .class-mod-chip.buff { color:#9bd49b; border-color:#315b37; }
+  .class-mod-chip.debuff { color:#e49a9a; border-color:#673a3a; }
+  .multiclasse-auto { border:1px solid var(--border2); background:var(--bg3); border-radius:var(--radius); padding:10px 12px; color:var(--gold); font-family:'Cinzel',serif; font-size:13px; }
+  .multiclasse-auto small { display:block; color:var(--text3); font-family:'Crimson Text',Georgia,serif; font-size:13px; margin-top:4px; }
+  body.readonly .class-select { opacity:.85; cursor:default; }
+
+  /* ── ABA DE DADOS ── */
+  .dice-wrap { max-width:760px; margin:0 auto; padding:1.25rem; }
+  .dice-header { display:flex; align-items:center; gap:10px; margin-bottom:1.25rem; padding-bottom:1rem; border-bottom:1px solid var(--border); }
+  .dice-title { font-family:'Cinzel',serif; color:var(--gold); font-size:18px; letter-spacing:.7px; }
+  .dice-panel { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:12px; }
+  .dice-panel-title { color:var(--gold-dim); font-family:'Cinzel',serif; font-size:12px; letter-spacing:.7px; margin-bottom:10px; }
+  .dice-controls { display:grid; grid-template-columns:minmax(100px,1fr) 90px auto; gap:8px; align-items:end; }
+  .dice-controls label, .dice-create label { display:block; color:var(--text3); font-family:'Cinzel',serif; font-size:10px; margin-bottom:4px; }
+  .dice-controls select, .dice-controls input, .dice-create input { width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg3); color:var(--text); font:15px 'Crimson Text',Georgia,serif; }
+  .dice-stage { display:flex; align-items:center; justify-content:center; gap:24px; min-height:180px; padding:18px; flex-wrap:wrap; }
+  .dice-scene { width:112px; height:112px; perspective:650px; flex-shrink:0; }
+  .dice-cube { width:100%; height:100%; position:relative; transform-style:preserve-3d; transform:rotateX(-24deg) rotateY(34deg); }
+  .dice-cube.rolling { animation:diceRoll .95s cubic-bezier(.2,.7,.2,1) both; }
+  .dice-face { position:absolute; width:112px; height:112px; display:flex; align-items:center; justify-content:center; border-radius:13px; border:2px solid #d9cba8; background:linear-gradient(145deg,#fffdf4,#d7caa8); color:#211b13; font-family:'Cinzel',serif; font-weight:600; font-size:34px; box-shadow:inset 0 0 10px rgba(60,40,10,.16),0 0 14px rgba(0,0,0,.28); backface-visibility:hidden; }
+  .dice-face.front { transform:translateZ(56px); }
+  .dice-face.back { transform:rotateY(180deg) translateZ(56px); }
+  .dice-face.right { transform:rotateY(90deg) translateZ(56px); }
+  .dice-face.left { transform:rotateY(-90deg) translateZ(56px); }
+  .dice-face.top { transform:rotateX(90deg) translateZ(56px); }
+  .dice-face.bottom { transform:rotateX(-90deg) translateZ(56px); }
+  @keyframes diceRoll { 0%{transform:rotateX(-24deg) rotateY(34deg) scale(.9)} 35%{transform:rotateX(410deg) rotateY(560deg) scale(1.08)} 70%{transform:rotateX(760deg) rotateY(940deg) scale(1.03)} 100%{transform:rotateX(1056deg) rotateY(1474deg) scale(1)} }
+  .dice-current { min-width:170px; text-align:center; }
+  .dice-current strong { display:block; color:var(--gold); font-family:'Cinzel',serif; font-size:28px; }
+  .dice-current span { color:var(--text3); font-size:13px; }
+  .dice-total { text-align:center; padding:12px; border:1px solid var(--border2); border-radius:var(--radius); background:var(--bg3); }
+  .dice-total span { color:var(--text3); font-family:'Cinzel',serif; font-size:11px; letter-spacing:.6px; }
+  .dice-total strong { display:block; color:var(--gold); font-family:'Cinzel',serif; font-size:32px; }
+  .dice-history { display:flex; flex-direction:column; gap:7px; }
+  .dice-history-item { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 10px; border:1px solid var(--border); background:var(--bg3); border-radius:var(--radius); }
+  .dice-history-item span { color:var(--text3); font-size:14px; }
+  .dice-history-item strong { color:var(--gold); font-family:'Cinzel',serif; white-space:nowrap; }
+  .dice-create { display:grid; grid-template-columns:1fr 110px auto; gap:8px; align-items:end; }
+  .dice-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .dice-modifier { display:grid; grid-template-columns:1fr auto; gap:8px; align-items:end; }
+  .dice-modifier label { display:block; color:var(--text3); font-family:'Cinzel',serif; font-size:10px; margin-bottom:4px; }
+  .dice-modifier input { width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg3); color:var(--text); font:15px 'Crimson Text',Georgia,serif; }
+  @media(max-width:520px){.dice-controls{grid-template-columns:1fr 76px}.dice-controls button{grid-column:1/-1}.dice-create{grid-template-columns:1fr 90px}.dice-create button{grid-column:1/-1}.dice-stage{gap:12px}.dice-current{min-width:130px}}
+
+</style>
+</head>
+<body>
+
+<div id="loadingOverlay" style="display:none"></div>
+
+<!-- HOME -->
+<div id="home" class="screen">
+  <div style="max-width:700px;margin:0 auto;padding:1.5rem 1.5rem 0">
+    <div class="home-header">
+      <div class="home-title">⚔ Fichas de RPG</div>
+      <div class="home-actions">
+        <span class="session-info" id="sessionInfo"></span>
+        <span class="readonly-badge">👁 Somente leitura</span>
+        <button class="btn-primary" onclick="addFicha()" id="btnNovaFicha">+ Nova Ficha</button>
+        <button class="btn-logout" onclick="sair()">Sair</button>
+      </div>
+    </div>
+
+    <!-- Navigation buttons -->
+    <div class="nav-buttons" id="navButtons">
+      <button class="nav-btn" id="btnNpcs" onclick="window.location.href='npcs.html'">👥 NPCs</button>
+      <button class="nav-btn mestre-only" id="btnSegredos" onclick="window.location.href='segredos.html'">🔒 Segredos</button>
+      <button class="nav-btn" onclick="window.location.href='arquivos.html'">📁 Arquivos</button>
+      <button class="nav-btn" onclick="window.location.href='lore.html'">📖 Lore</button>
+      <button class="nav-btn" onclick="window.location.href='mapa.html'">🗺️ Mapa</button>
+      <button class="nav-btn" onclick="window.location.href='itens.html'">⚗️ Itens</button>
+      <button class="nav-btn" onclick="abrirDados()">🎲 Dados</button>
+      <button class="nav-btn" onclick="window.location.href='mecanicas.html'">🧩 Mecânicas</button>
+      <button class="nav-btn mestre-only" id="btnUsuarios" onclick="window.location.href='usuarios.html'">⚙ Usuários</button>
+    </div>
+  </div>
+
+  <div style="max-width:700px;margin:0 auto;padding:0 1.5rem 1.5rem">
+    <div class="ficha-list" id="fichaList"></div>
+    <div class="empty-state" id="emptyMsg">
+      <div class="empty-icon">📜</div>
+      Nenhuma ficha ainda.<br>
+      <span id="emptyHint">Clique em "Nova Ficha" para começar.</span>
+    </div>
+  </div>
+</div>
+
+
+<!-- ABA DE DADOS -->
+<div id="diceScreen" class="screen">
+  <div class="dice-wrap">
+    <div class="dice-header">
+      <button class="btn-icon" onclick="goHome()">←</button>
+      <span class="dice-title">🎲 Rolagem de Dados</span>
+    </div>
+    <div class="dice-panel">
+      <div class="dice-panel-title">ROLAR DADOS</div>
+      <div class="dice-controls">
+        <div><label for="diceType">Tipo de dado</label><select id="diceType">
+          <option value="4">D4</option><option value="6" selected>D6</option><option value="8">D8</option>
+          <option value="10">D10</option><option value="12">D12</option><option value="20">D20</option>
+          <option value="100">D100</option>
+        </select></div>
+        <div><label for="diceCount">Quantidade</label><input id="diceCount" type="number" min="1" max="30" value="1"></div>
+        <button class="btn-primary" id="diceRollBtn" onclick="rolarDados()">🎲 Rolar</button>
+      </div>
+      <div class="dice-stage">
+        <div class="dice-scene"><div class="dice-cube" id="diceCube">
+          <div class="dice-face front" id="diceCubeFront">?</div><div class="dice-face back">6</div>
+          <div class="dice-face right">3</div><div class="dice-face left">4</div>
+          <div class="dice-face top">2</div><div class="dice-face bottom">5</div>
+        </div></div>
+        <div class="dice-current"><strong id="diceLastResult">—</strong><span id="diceResultLabel">Aguardando rolagem</span></div>
+      </div>
+      <div class="dice-total"><span>SOMA ACUMULADA</span><strong id="diceTotal">0</strong></div>
+      <p class="auto-note">Cada rolagem é somada ao total. Role outros dados para continuar acumulando.</p>
+    </div>
+    <div class="dice-panel">
+      <div class="dice-panel-title">CRIAR DADO PERSONALIZADO</div>
+      <div class="dice-create">
+        <div><label for="customDiceName">Nome</label><input id="customDiceName" type="text" maxlength="24" placeholder="Ex.: Dado de Sorte"></div>
+        <div><label for="customDiceSides">Faces</label><input id="customDiceSides" type="number" min="2" max="100000" value="30"></div>
+        <button class="btn-primary" onclick="criarDadoPersonalizado()">＋ Criar</button>
+      </div>
+      <p class="auto-note">O dado personalizado vai aparecer na lista de tipos e ficará salvo neste navegador.</p>
+    </div>
+    <div class="dice-panel">
+      <div class="dice-panel-title">SOMAR UM VALOR</div>
+      <div class="dice-modifier">
+        <div><label for="diceModifier">Modificador (pode ser positivo ou negativo)</label><input id="diceModifier" type="number" value="0"></div>
+        <button onclick="somarModificadorDados()">Adicionar à soma</button>
+      </div>
+      <div class="dice-actions" style="margin-top:10px"><button onclick="limparSomaDados()">Limpar soma e histórico</button></div>
+    </div>
+    <div class="dice-panel">
+      <div class="dice-panel-title">HISTÓRICO DE ROLAGENS</div>
+      <div id="diceHistory" class="dice-history"><div class="auto-note">Nenhuma rolagem realizada.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 1 -->
+<div id="page1" class="screen">
+  <div class="editor-wrap">
+    <div class="editor-header">
+      <button class="btn-icon" onclick="goHome()">←</button>
+      <span class="editor-title">Dados do Personagem</span>
+      <span class="readonly-badge" style="margin-left:8px">👁 Leitura</span>
+    </div>
+
+    <div class="page-tabs">
+      <div class="page-tab active" onclick="goPage(1)">📋 Dados</div>
+      <div class="page-tab" onclick="goPage(2)">⭐ Perícias</div>
+      <div class="page-tab" onclick="goPage(3)">🎒 Itens</div>
+      <div class="page-tab" onclick="goPage(4)">✨ Habilidades</div>
+    </div>
+
+    <div class="galeria-wrap">
+      <label class="field-label" style="margin-bottom:6px;display:block">Fotos do Personagem</label>
+      <div class="galeria-fotos" id="galeriaFotos">
+        <button type="button" class="galeria-add-btn" id="btnAdicionarFoto" onclick="document.getElementById('f_foto_input').click()" title="Adicionar foto">+</button>
+      </div>
+      <input type="file" id="f_foto_input" accept="image/*" style="display:none" onchange="onFotoSelecionada(event)">
+    </div>
+
+    <div class="grid-2">
+      <div class="field-group full-width"><label class="field-label">Nome</label><input type="text" id="f_nome" placeholder="Nome do personagem"></div>
+    </div>
+    <div class="grid-4">
+      <div class="field-group"><label class="field-label">LVL</label><input type="number" id="f_lvl" placeholder="0"></div>
+      <div class="field-group"><label class="field-label">Força</label><input type="number" id="f_forca" placeholder="0"></div>
+      <div class="field-group"><label class="field-label">Resistência</label><input type="number" id="f_resist" placeholder="0"></div>
+      <div class="field-group"><label class="field-label">Agilidade</label><input type="number" id="f_agilidade" placeholder="0"></div>
+    </div>
+    <div class="grid-3">
+      <div class="field-group"><label class="field-label">Velocidade</label><input type="number" id="f_velocidade" placeholder="0"></div>
+      <div class="field-group"><label class="field-label">QI</label><input type="number" id="f_qi" placeholder="0"></div>
+      <div class="field-group"><label class="field-label">Stamina</label><input type="number" id="f_stamina" placeholder="0"></div>
+    </div>
+
+    <div class="section-divider">Vida e Energia</div>
+    <div class="vida-stack">
+      <input type="text" id="f_vida_txt1" placeholder="Vida — linha 1">
+      <input type="text" id="f_vida_txt2" placeholder="Energia — linha 2">
+    </div>
+    <div class="grid-2">
+      <div class="field-group"><label class="field-label">Sanidade</label><input type="text" id="f_sanidade"></div>
+      <div class="field-group"><label class="field-label">Modificador</label><input type="text" id="f_modificador"></div>
+    </div>
+    <div class="grid-4">
+      <div class="field-group"><label class="field-label">CA</label><input type="text" id="f_ca"></div>
+      <div class="field-group"><label class="field-label">Vida (nº)</label><input type="number" id="f_vida_num" placeholder="0"></div>
+      <div class="field-group"><label class="field-label">Combate</label><input type="number" id="f_combate" placeholder="0"></div>
+      <div class="field-group"><label class="field-label">Caminho</label><input type="text" id="f_caminho"></div>
+    </div>
+    <div class="grid-2">
+      <div class="field-group"><label class="field-label">Dano Crítico</label><input type="text" id="f_dano_critico" placeholder="Ex: 2x, +500..."></div>
+    </div>
+
+    <div class="section-divider">Campos Extras</div>
+    <div id="extraFields" class="extra-fields"></div>
+    <button class="btn-add" id="addExtraBtn" onclick="addExtraField()">+ Adicionar campo</button>
+
+    <div class="nav-footer">
+      <span></span>
+      <button class="btn-primary" onclick="goPage(2)">Próximo →</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 2 -->
+<div id="page2" class="screen">
+  <div class="editor-wrap">
+    <div class="editor-header">
+      <button class="btn-icon" onclick="goHome()">←</button>
+      <span class="editor-title">Perícias e Classes</span>
+      <span class="readonly-badge" style="margin-left:8px">👁 Leitura</span>
+    </div>
+
+    <div class="page-tabs">
+      <div class="page-tab" onclick="goPage(1)">📋 Dados</div>
+      <div class="page-tab active" onclick="goPage(2)">⭐ Perícias</div>
+      <div class="page-tab" onclick="goPage(3)">🎒 Itens</div>
+      <div class="page-tab" onclick="goPage(4)">✨ Habilidades</div>
+    </div>
+    <div class="card-section">
+      <div class="card-section-title" style="margin-bottom:10px">Perícias e Classes</div>
+      <div class="grid-2">
+        <div class="field-group"><label class="field-label" for="f_classe">Classe</label><select class="class-select" id="f_classe"><option value="">Selecione uma classe</option><option value="Ladino">Ladino</option><option value="Assassino">Assassino</option><option value="Artífice">Artífice</option><option value="Monge">Monge</option><option value="Mago">Mago</option><option value="Piadista">Piadista</option><option value="Paladino">Paladino</option><option value="Guerreiro">Guerreiro</option><option value="Atirador">Atirador</option><option value="Curandeiro">Curandeiro</option><option value="Alquimista">Alquimista</option><option value="Tank">Tank</option><option value="Nobre">Nobre</option><option value="Bardo">Bardo</option><option value="Berserker">Berserker</option><option value="Executor">Executor</option><option value="Sentinela">Sentinela</option><option value="Ronin">Ronin</option><option value="Duelista">Duelista</option><option value="Inquisidor">Inquisidor</option><option value="Cronomante">Cronomante</option><option value="Hexer">Hexer</option><option value="Espectro">Espectro</option><option value="Ascendente">Ascendente</option><option value="Redentor">Redentor</option><option value="Custódio">Custódio</option><option value="Cronista">Cronista</option><option value="Espiritualista">Espiritualista</option><option value="Diplomata">Diplomata</option><option value="Vigia">Vigia</option><option value="Tecelão">Tecelão</option><option value="Marionetista">Marionetista</option></select></div>
+        <div class="field-group"><label class="field-label" for="f_classe2">Segunda classe (opcional)</label><select class="class-select" id="f_classe2"><option value="">Nenhuma</option><option value="Ladino">Ladino</option><option value="Assassino">Assassino</option><option value="Artífice">Artífice</option><option value="Monge">Monge</option><option value="Mago">Mago</option><option value="Piadista">Piadista</option><option value="Paladino">Paladino</option><option value="Guerreiro">Guerreiro</option><option value="Atirador">Atirador</option><option value="Curandeiro">Curandeiro</option><option value="Alquimista">Alquimista</option><option value="Tank">Tank</option><option value="Nobre">Nobre</option><option value="Bardo">Bardo</option><option value="Berserker">Berserker</option><option value="Executor">Executor</option><option value="Sentinela">Sentinela</option><option value="Ronin">Ronin</option><option value="Duelista">Duelista</option><option value="Inquisidor">Inquisidor</option><option value="Cronomante">Cronomante</option><option value="Hexer">Hexer</option><option value="Espectro">Espectro</option><option value="Ascendente">Ascendente</option><option value="Redentor">Redentor</option><option value="Custódio">Custódio</option><option value="Cronista">Cronista</option><option value="Espiritualista">Espiritualista</option><option value="Diplomata">Diplomata</option><option value="Vigia">Vigia</option><option value="Tecelão">Tecelão</option><option value="Marionetista">Marionetista</option></select></div>
+      </div>
+      <div class="grid-2">
+        <div class="field-group"><label class="field-label">Raça</label><input type="text" id="f_raca"></div>
+      </div>
+      <div class="card-section" style="margin-top:10px;margin-bottom:0">
+        <div class="card-section-title" style="margin-bottom:8px">Multiclasse automática</div>
+        <div id="multiclasseInfo" class="multiclasse-auto">Selecione duas classes para descobrir a multiclasse.</div>
+        <input type="hidden" id="f_mc_classe" value="">
+        <p class="auto-note">A combinação é identificada automaticamente. Não é necessário escolher a multiclasse manualmente.</p>
+      </div>
+    </div>
+    <div class="card-section">
+      <div class="card-section-header"><span class="card-section-title">Perícias Normais</span><button class="btn-icon btn-add" style="width:auto;margin:0" onclick="addPericiaNormal()">＋</button></div>
+      <div class="perk-list" id="periciasNormais"></div>
+      <p class="auto-note">As perícias das classes e da multiclasse entram aqui automaticamente. Não são adicionadas às perícias especiais ou supremas.</p>
+    </div>
+    <div class="card-section">
+      <div class="card-section-title" style="margin-bottom:8px">Buffs automáticos</div>
+      <div id="classeBuffs" class="class-mod-list"><span class="auto-note">Selecione uma classe.</span></div>
+    </div>
+    <div class="card-section">
+      <div class="card-section-title" style="margin-bottom:8px">Debuffs automáticos</div>
+      <div id="classeDebuffs" class="class-mod-list"><span class="auto-note">Selecione uma classe.</span></div>
+    </div>
+    <div class="card-section">
+      <div class="card-section-header">
+        <span class="card-section-title">Perícias Especiais</span>
+        <button class="btn-icon btn-add" style="width:auto;margin:0" onclick="abrirPickerPericias()">+</button>
+      </div>
+      <div class="perk-list" id="especiais"></div>
+    </div>
+    <div class="card-section">
+      <div class="card-section-header">
+        <span class="card-section-title">Perícias Supremas</span>
+        <button class="btn-icon btn-add" style="width:auto;margin:0" onclick="addPerk('supremas')">+</button>
+      </div>
+      <div class="perk-list" id="supremas"></div>
+    </div>
+    <div class="nav-footer">
+      <button onclick="goPage(1)">← Anterior</button>
+      <button class="btn-primary" onclick="goPage(3)">Próximo →</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 3 -->
+<div id="page3" class="screen">
+  <div class="editor-wrap">
+    <div class="editor-header">
+      <button class="btn-icon" onclick="goHome()">←</button>
+      <span class="editor-title">Itens</span>
+      <span class="readonly-badge" style="margin-left:8px">👁 Leitura</span>
+    </div>
+
+    <div class="page-tabs">
+      <div class="page-tab" onclick="goPage(1)">📋 Dados</div>
+      <div class="page-tab" onclick="goPage(2)">⭐ Perícias</div>
+      <div class="page-tab active" onclick="goPage(3)">🎒 Itens</div>
+      <div class="page-tab" onclick="goPage(4)">✨ Habilidades</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th style="width:35%">Nome</th><th style="width:15%">Qtd</th><th style="width:35%">Descrição</th><th></th></tr></thead>
+        <tbody id="itensBody"></tbody>
+      </table>
+    </div>
+    <button class="btn-add" onclick="addItem()">+ Adicionar item</button>
+    <div class="nav-footer">
+      <button onclick="goPage(2)">← Anterior</button>
+      <button class="btn-primary" onclick="goPage(4)">Próximo →</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 4 -->
+<div id="page4" class="screen">
+  <div class="editor-wrap">
+    <div class="editor-header">
+      <button class="btn-icon" onclick="goHome()">←</button>
+      <span class="editor-title">Habilidades</span>
+      <span class="readonly-badge" style="margin-left:8px">👁 Leitura</span>
+    </div>
+
+    <div class="page-tabs">
+      <div class="page-tab" onclick="goPage(1)">📋 Dados</div>
+      <div class="page-tab" onclick="goPage(2)">⭐ Perícias</div>
+      <div class="page-tab" onclick="goPage(3)">🎒 Itens</div>
+      <div class="page-tab active" onclick="goPage(4)">✨ Habilidades</div>
+    </div>
+    <div id="habilidadesBody" class="hab-list"></div>
+    <button class="btn-add" onclick="addHabilidade()">+ Adicionar habilidade</button>
+    <div class="nav-footer">
+      <button onclick="goPage(3)">← Anterior</button>
+      <button class="btn-primary" data-save="1" onclick="salvarFicha()">💾 Salvar Ficha</button>
+      <button onclick="exportarFicha()" style="font-size:12px;padding:6px 12px">📄 Exportar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" onclick="fecharLightbox()">×</button>
+  <div class="lightbox-img-wrap" id="lightboxWrap">
+    <img class="lightbox-img" id="lightboxImg" src="" alt="">
+    <button class="lightbox-nav lightbox-prev" onclick="lightboxNav(-1)">‹</button>
+    <button class="lightbox-nav lightbox-next" onclick="lightboxNav(1)">›</button>
+  </div>
+  <div class="lightbox-controls">
+    <button onclick="lightboxZoom(-0.2)">−</button>
+    <span style="color:#fff;font-size:13px;min-width:40px;text-align:center" id="lightboxZoomLabel">100%</span>
+    <button onclick="lightboxZoom(0.2)">+</button>
+    <button onclick="lightboxReset()" style="font-size:13px">↺ Reset</button>
+  </div>
+</div>
+
+<!-- CROP MODAL -->
+<div class="crop-modal" id="cropModal">
+  <div class="crop-title">Ajustar imagem — arraste e use o zoom</div>
+  <div class="crop-area" id="cropArea">
+    <img class="crop-img" id="cropImg" src="" alt="">
+  </div>
+  <div class="crop-controls">
+    <div class="crop-zoom">
+      <span>−</span>
+      <input type="range" id="cropZoomRange" min="0.5" max="5" step="0.05" value="1" oninput="onCropZoom()">
+      <span>+</span>
+    </div>
+    <button onclick="fecharCrop()">Cancelar</button>
+    <button class="btn-primary" onclick="confirmarCrop()">✓ Confirmar</button>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCEiRmGP4wGrfDwbbIadvrt1Ik56ecbKYk",
+  authDomain: "path-of-stars.firebaseapp.com",
+  databaseURL: "https://path-of-stars-default-rtdb.firebaseio.com",
+  projectId: "path-of-stars",
+  storageBucket: "path-of-stars.firebasestorage.app",
+  messagingSenderId: "565088659888",
+  appId: "1:565088659888:web:8ee544001aee376e9f0e75",
+  measurementId: "G-X6LQT2TN7Z"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
+/* ─── SESSÃO ─── */
+const logado = sessionStorage.getItem("logado");
+const tipo   = sessionStorage.getItem("tipo");
+const usuarioLogado = sessionStorage.getItem("usuario") || "mestre";
+
+if (!logado) window.location.href = "login.html";
+
+const isMestre = tipo === "mestre";
+
+if (!isMestre) {
+  document.body.classList.add("readonly");
+  document.getElementById("btnNovaFicha").style.display = "none";
+  // Hide mestre-only nav buttons
+  document.querySelectorAll('.nav-btn.mestre-only').forEach(b => b.style.display = 'none');
+}
+
+// When a ficha is loaded in readonly mode, mark all inputs as readonly
+function applyReadonly() {
+  if (!isMestre) {
+    document.querySelectorAll('input, textarea, select').forEach(el => {
+      if (el.tagName === 'SELECT') el.disabled = true;
+      else el.setAttribute('readonly', true);
+      el.setAttribute('tabindex', '-1');
+    });
+  }
+}
+
+document.getElementById("sessionInfo").textContent =
+  isMestre ? "⚔ Mestre" : "🧙 " + usuarioLogado;
+
+function sair() {
+  sessionStorage.clear();
+  window.location.href = "login.html";
+}
+window.sair = sair;
+
+/* ─── CATÁLOGO DE CLASSES E MULTICLASSES ─── */
+const DADOS_CLASSES = [{"name":"Ladino","buffs":{"Agilidade":2,"Velocidade":3},"debuffs":{"Força":-2,"Resistência":-2},"skills":["Furtividade +5"],"abilityName":"Roubo","ability":"Consegue roubar qualquer item que não esteja encantado com proteção a 4 metros"},{"name":"Assassino","buffs":{"Agilidade":3,"Força":2,"Combate":2},"debuffs":{"Resistência":-2,"Stamina":-15},"skills":["Percepção +3"],"abilityName":"Finalização","ability":"Ataque Duplo, na qual se o alvo estiver com 50% de HP o segundo Golpe t +25% um Crítico"},{"name":"Artífice","buffs":{"Agilidade":2,"Força":1,"QI":7},"debuffs":{"Stamina":-10,"HP":-10},"skills":["Persuasão +2","Percepção +5"],"abilityName":"Construção","ability":"Consegue aumentar a Eficiência de um item em 50% por 4 Turnos"},{"name":"Monge","buffs":{"Combate":2,"Força":1,"Agilidade":1},"debuffs":{"Resistência":-2,"Velocidade":-2},"skills":["Atletismo +3","Sobrevivência"],"abilityName":"Meditar","ability":"+10 em Força, Concentração e +5 em Agilidade"},{"name":"Mago","buffs":{"Energia Criada":20,"QI":2},"debuffs":{"HP":-15,"Resistência":-1},"skills":["Percepção +4","Arcadismo"],"abilityName":"Arcade","ability":"Aumenta a distância e tempo de Habilidades do tipo Mágico"},{"name":"Piadista","buffs":{"Resistência":2,"Agilidade":1,"QI":3},"debuffs":{"Força":-3,"HP":-10},"skills":["Percepção +4","Persuasão +3"],"abilityName":"Piada Forçada","ability":"+7 no Dado para Piadas"},{"name":"Paladino","buffs":{"Força":2,"QI":2,"HP":15},"debuffs":{"Velocidade":-3,"Resistência":-1},"skills":["Atletismo +3"],"abilityName":"Ouvinte","ability":"Recebe uma premonição das próximas 3 ações do oponente"},{"name":"Guerreiro","buffs":{"Força":3,"Combate":1},"debuffs":{"Resistência":-1,"Agilidade":-1},"skills":["Atletismo +2","Intimidação"],"abilityName":"Fortificação","ability":"+5 de Força por 3 Turnos"},{"name":"Atirador","buffs":{"Agilidade":2,"HP":10,"Stamina":10},"debuffs":{"Combate":-2,"Força":-3},"skills":["Percepção +4","Furtividade +3"],"abilityName":"Mira","ability":"Amplia a visão em 1km, se estiver focando em um alvo ganha +3 no dado"},{"name":"Curandeiro","buffs":{"HP":15,"QI":2,"Velocidade":2,"Agilidade":1},"debuffs":{"Força":-3,"Combate":-4,"Stamina":-10},"skills":["Percepção +4"],"abilityName":"Cura","ability":"Cura 50 de HP, Ferimentos parciais e Efeitos"},{"name":"Alquimista","buffs":{"QI":7,"Resistência":3},"debuffs":{"Força":-2,"Combate":-2},"skills":["Arcadismo","Percepção +2"],"abilityName":"Breaking","ability":"Consegue criar qualquer poção instantaneamente a partir dos elementos necessários"},{"name":"Tank","buffs":{"Resistência":5,"HP":15,"Stamina":10},"debuffs":{"Velocidade":-2,"Agilidade":-3},"skills":["Sobrevivência"],"abilityName":"Barreira","ability":"Cria uma barreira que absorve o dano e impacto, com a vida da barreira sendo igual a Resistência do status"},{"name":"Nobre","buffs":{"QI":3,"HP":10},"debuffs":{"Força":-2,"Velocidade":-3},"skills":["Persuasão +6"],"abilityName":"Influência","ability":"Mais 15% de dano e vantagem contra inimigos e mais 40% se forem malignos (3 Turnos)"},{"name":"Bardo","buffs":{"QI":2,"Velocidade":3},"debuffs":{"Resistência":-1,"Força":-2},"skills":["Persuasão +3"],"abilityName":"Composição","ability":"Tudo dito em forma de canto se torna real para ouvintes com Sanidade Menor que a do usuário"},{"name":"Berserker","buffs":{"Força":5,"Combate":2,"HP":10},"debuffs":{"Resistência":-3,"QI":-5,"Velocidade":-3},"skills":["Intimidação +5"],"abilityName":"Fúria","ability":"Por 3 Turnos você da 55% a mais de dano, mas tem uma queda de 40% de stamina"},{"name":"Executor","buffs":{"Força":3,"Combate":3,"Stamina":20},"debuffs":{"Velocidade":-2,"Agilidade":-3},"skills":["Intimidação +3","Atletismo +2"],"abilityName":"Ataque Splitz","ability":"Fornece críticode +30% e de dano por 3 Turnos"},{"name":"Sentinela","buffs":{"Resistência":3,"HP":20,"Velocidade":1},"debuffs":{"Agilidade":-2,"Stamina":-30},"skills":["Sobrevivência","Percepção +2"],"abilityName":"Postura Defensiva","ability":"Durante 4 turnos, Aliados ganham +3 de Resistência e -25% do dano recebido. Enquanto a habilidade estiver ativa, o Sentinela não pode receber acertos críticos."},{"name":"Ronin","buffs":{"Força":3,"Agilidade":4},"debuffs":{"QI":-3,"Resistência":-4},"skills":["Sobrevivência","Atletismo +5"],"abilityName":"Caminho Solitário","ability":"Em uma luta que você está solo, você consegue dar 35% a mais de dano por 4 Turnos"},{"name":"Duelista","buffs":{"Combate":8,"Agilidade":4,"Velocidade":3},"debuffs":{"Resistência":-4},"skills":["Atletismo +3","Furtividade +2"],"abilityName":"Contra-ataque Perfeito","ability":"Durante 3 Turnos, sempre que bloquear ou desviar de um ataque corpo a corpo, o próximo golpe recebe +45% de dano e um Crítico."},{"name":"Inquisidor","buffs":{"Velocidade":2,"Força":2,"Combate":2},"debuffs":{"Agilidade":-3,"QI":-5,"Energia Criada":-30},"skills":["Persuasão +3","Arcadismo"],"abilityName":"Boa Ação","ability":"-40% das ações dos inimigos e 15% de cancela-las"},{"name":"Cronomante","buffs":{"QI":6,"Energia Criada":25,"Agilidade":2},"debuffs":{"Força":-3,"HP":-30,"Resistência":-3},"skills":["Arcadismo","Percepção +4"],"abilityName":"Distorção Temporal","ability":"Em um cooldown de 7 Turnos escolha:\nReceber um turno extra.\nFazer um inimigo perder o próximo turno"},{"name":"Hexer","buffs":{"QI":5,"Energia Criada":15},"debuffs":{"Força":-3,"HP":-25},"skills":["Arcadismo","Percepção +5"],"abilityName":"Maldição","ability":"Escolha um alvo. Durante 4 turnos ele recebe:\n-15% Força\n-15% Agilidade\n-15% Resistência"},{"name":"Espectro","buffs":{"Agilidade":4,"Velocidade":3},"debuffs":{"Força":-3,"Resistência":-3,"HP":-45},"skills":["Furtividade +3","Percepção +4"],"abilityName":"Forma Espectral","ability":"Durante 2 turnos, pode atravessar obstáculos e recebe 50% menos dano de ataques físicos, além de ganhar +5 no dado para esquivas."},{"name":"Ascendente","buffs":{"Força":2,"Agilidade":3,"Combate":2},"debuffs":{"Resistência":-3,"HP":-100,"Stamina":-50},"skills":["Atletismo +4"],"abilityName":"Ascensão Progressiva","ability":"A cada 2 turnos, ganha +2 em Força, Agilidade e Combate. Pode acumular até 5 vezes. Ao fim da luta, volta ao normal."},{"name":"Redentor","buffs":{"Força":2,"QI":3,"HP":20},"debuffs":{"Velocidade":-2,"Agilidade":-2},"skills":["Persuasão +4","Sobrevivência"],"abilityName":"Julgamento de Redenção","ability":"Inimigos que causaram dano em aliados recebem -5 em todos os atributos ofensivos por 3 turnos.\nSe o Redentor curar alguém, ganha +40% de dano por 2 turnos."},{"name":"Custódio","buffs":{"Resistência":4,"HP":20,"Força":2},"debuffs":{"Velocidade":-2,"Agilidade":-2},"skills":["Atletismo +3","Sobrevivência"],"abilityName":"Voto de Proteção","ability":"Escolha um aliado. Durante 5 turnos, todo ataque direcionado a esse aliado é redirecionado para o Custódio. Enquanto a habilidade estiver ativa, o Custódio recebe 70% menos dano e não pode ser empurrado ou derrubado."},{"name":"Cronista","buffs":{"QI":5,"Agilidade":5},"debuffs":{"Combate":-3,"Força":-5},"skills":["Persuasão +3"],"abilityName":"Registro","ability":"Copia qualquer Perícia por 4 turnos"},{"name":"Espiritualista","buffs":{"Energia Criada":30,"QI":4,"HP":50},"debuffs":{"Resistência":-4,"Força":-3},"skills":["Arcadismo","Sobrevivência"],"abilityName":"Vínculo Espiritual","ability":"Durante 4 turnos, 40% do dano sofrido pelos aliados é convertido em Energia para o Espiritualista. Se o Vínculo for colocado em si próprio, a Energia se torna permanente"},{"name":"Diplomata","buffs":{"Resistência":3,"Agilidade":2},"debuffs":{"Força":-3,"Stamina":-15},"skills":["Arcadismo","Persuasão +2"],"abilityName":"Confisco","ability":"Retira uma habilidade de alguém por 5 tunos"},{"name":"Vigia","buffs":{"Velocidade":4,"Agilidade":2},"debuffs":{"Força":-2,"HP":-20},"skills":["Percepção +5","Sobrevivência"],"abilityName":"Olhos de Águia","ability":"Percebe a Posição exata de todos em um raio de 20 metros(ser for encantada pode perceber seres espirituais)"},{"name":"Tecelão","buffs":{"QI":6,"Energia Criada":30},"debuffs":{"Força":-2,"HP":-30},"skills":["Arcadismo","Percepção(Passiva) +5"],"abilityName":"Tecer Destino","ability":"Escolha um aliado. Todas os Efeitos Negativos serão negados"},{"name":"Marionetista","buffs":{"QI":6,"Agilidade":3},"debuffs":{"Força":-3,"HP":-35},"skills":["Persuasão +6","Arcadismo"],"abilityName":"Influência Mental","ability":"Durante 2 turnos, força um inimigo a atacar o aliado mais próximo, se o inimigo estiver desmaiado ou morto ele pode atacar durante 10 turnos, mas o usuário fica incapacitado"}];
+const CLASSES_MAP = new Map(DADOS_CLASSES.map(c => [c.name.toLocaleLowerCase('pt-BR'), c]));
+let MULTICLASSES_MAP = new Map();
+let MULTICLASSES_PRONTAS = false;
+function chaveMulticlasse(a, b) { return [String(a||'').trim().toLocaleLowerCase('pt-BR'), String(b||'').trim().toLocaleLowerCase('pt-BR')].sort().join('|'); }
+function textoLimpoHTML(htmlTexto) { const d = document.createElement('div'); d.innerHTML = htmlTexto || ''; return (d.textContent || d.innerText || '').replace(/\s+/g, ' ').trim(); }
+function parseModificadoresTexto(texto) {
+  const saida = {};
+  String(texto||'').split('|').forEach(parte => {
+    const m = parte.trim().match(/([+-])\s*(\d+)\s*(?:da\s+|na\s+)?(.+)$/i);
+    if (!m) return;
+    let nome = m[3].trim().replace(/\s+/g,' ');
+    const mapa = {'qi':'QI','energia que você criou':'Energia Criada','energia criada':'Energia Criada','hp':'HP','força':'Força','resistência':'Resistência','agilidade':'Agilidade','velocidade':'Velocidade','combate':'Combate','stamina':'Stamina'};
+    nome = mapa[nome.toLocaleLowerCase('pt-BR')] || nome;
+    const valor = (m[1] === '-' ? -1 : 1) * Number(m[2]);
+    saida[nome] = (saida[nome] || 0) + valor;
+  });
+  return saida;
+}
+function parsePericiasTexto(texto) {
+  return String(texto||'').split('|').map(t => t.trim()).filter(Boolean).map(t => {
+    const m = t.match(/^\+\s*(\d+)\s+(.+)$/);
+    return m ? m[2].trim() + ' +' + m[1] : t;
+  });
+}
+function parseMulticlasseBloco(bloco) {
+  const titulo = String(bloco.titulo || '');
+  const par = titulo.split('—').pop().trim().split(/\s+\+\s+/);
+  if (par.length !== 2) return null;
+  const txt = textoLimpoHTML(bloco.html);
+  const attrs = (txt.match(/Atributos:\s*([\s\S]*?)\s*Perícias:/i) || [,''])[1];
+  const pericias = (txt.match(/Perícias:\s*([\s\S]*?)\s*Habilidade\s*[—–-]/i) || [,''])[1];
+  const hab = txt.match(/Habilidade\s*[—–-]\s*([^:]+):\s*([\s\S]*)/i);
+  return {
+    titulo: titulo,
+    classes: par.map(x=>x.trim()),
+    buffs: parseModificadoresTexto(attrs),
+    debuffs: {},
+    skills: parsePericiasTexto(pericias),
+    abilityName: hab ? hab[1].trim() : titulo.split('—')[0].trim(),
+    ability: hab ? hab[2].trim() : ''
+  };
+}
+async function carregarMulticlasses() {
+  try {
+    const resposta = await fetch('./multiclasse_mecanicas.json', {cache:'no-store'});
+    if (!resposta.ok) throw new Error('HTTP ' + resposta.status);
+    const origem = await resposta.json();
+    const blocos = Array.isArray(origem.blocos) ? origem.blocos : Object.values(origem.blocos || {});
+    blocos.forEach(b => { const item = parseMulticlasseBloco(b); if (item) MULTICLASSES_MAP.set(chaveMulticlasse(item.classes[0], item.classes[1]), item); });
+    MULTICLASSES_PRONTAS = true;
+    return true;
+  } catch (erro) {
+    console.error('Não foi possível carregar multiclasse_mecanicas.json:', erro);
+    MULTICLASSES_PRONTAS = false;
+    return false;
+  }
+}
+const MULTICLASSES_PROMISE = carregarMulticlasses();
+
+/* ─── DADOS ─── */
+let fichas = [];
+let editingId = null;
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+function goHome() { editingId = null; showScreen('home'); renderHome(); }
+function goPage(n) { showScreen('page' + n); }
+function genId() { return '_' + Math.random().toString(36).slice(2, 9); }
+function esc(s) {
+  return String(s || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+window.goHome = goHome;
+window.goPage = goPage;
+
+/* ─── FIREBASE ─── */
+async function salvarTudo(toast = true) {
+  const obj = {};
+  fichas.forEach(f => { obj[f.id] = f; });
+  await set(ref(db, 'fichas'), obj);
+  if (toast) showToast('Fichas salvas!');
+}
+
+// onValue escuta em tempo real e atualiza a home automaticamente
+onValue(ref(db, 'fichas'), snap => {
+  fichas = snap.exists() ? Object.values(snap.val()) : [];
+  if (document.getElementById('home').classList.contains('active')) {
+    renderHome();
+  }
+});
+
+/* ─── FICHAS ─── */
+function addFicha() {
+  if (!isMestre) return;
+  editingId = genId();
+  const f = {
+    id: editingId, nome: 'Nova Ficha', lvl: 1,
+    forca: 0, resist: 0, agilidade: 0, velocidade: 0,
+    vida_txt1: '', vida_txt2: '', sanidade: '', modificador: '',
+    qi: 0, ca: '', vida_num: 0, combate: 0, caminho: '', stamina: 0,
+    extraFields: [], classe: '', classe2: '', mc_classe: '', pericia: '', raca: '', dano_critico: '',
+    especiais: [], supremas: [], pericias_normais: [], itens: [], habilidades: []
+  };
+  fichas.push(f);
+  loadFichaToForm(f);
+  showScreen('page1');
+}
+window.addFicha = addFicha;
+
+function editFicha(id) {
+  editingId = id;
+  const f = fichas.find(x => x.id === id);
+  if (!f) return;
+  loadFichaToForm(f);
+  showScreen('page1');
+}
+window.editFicha = editFicha;
+
+async function deleteFicha(id) {
+  if (!isMestre) return;
+  if (!confirm('Excluir esta ficha?')) return;
+  fichas = fichas.filter(x => x.id !== id);
+  await remove(ref(db, 'fichas/' + id));
+  renderHome();
+}
+window.deleteFicha = deleteFicha;
+
+function loadFichaToForm(f) {
+  const v = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
+  v('f_nome', f.nome); v('f_lvl', f.lvl); v('f_forca', f.forca);
+  v('f_resist', f.resist); v('f_agilidade', f.agilidade); v('f_velocidade', f.velocidade);
+  v('f_vida_txt1', f.vida_txt1); v('f_vida_txt2', f.vida_txt2);
+  v('f_sanidade', f.sanidade); v('f_modificador', f.modificador);
+  v('f_qi', f.qi); v('f_ca', f.ca); v('f_vida_num', f.vida_num);
+  v('f_combate', f.combate); v('f_caminho', f.caminho); v('f_stamina', f.stamina);
+  v('f_dano_critico', f.dano_critico);
+  v('f_classe', f.classe); v('f_classe2', f.classe2);
+  v('f_mc_classe', f.mc_classe || '');
+  v('f_raca', f.raca);
+  const normaisSalvas = Array.isArray(f.pericias_normais) ? f.pericias_normais : (f.pericia ? String(f.pericia).split(/[;,\n]+/).map(x=>x.trim()).filter(Boolean).map(nome=>({nome,origem:'manual'})) : []);
+  renderPericiasNormais(normaisSalvas);
+
+  fotosAtuais = Array.isArray(f.fotos) ? f.fotos : (f.foto ? [f.foto] : []);
+  renderGaleria();
+
+  const ef = document.getElementById('extraFields');
+  ef.innerHTML = '';
+  (f.extraFields || []).forEach(r => addExtraField(r));
+
+  renderPerks('especiais', f.especiais || []);
+  renderPerks('supremas', f.supremas || []);
+  renderTableRows('itensBody', f.itens || [], ['nome','qtd','desc'], ['Nome','1','Descrição']);
+  renderTableRows('habilidadesBody', f.habilidades || [], ['nome','tipo','efeito'], ['Nome','Tipo','Efeito']);
+  applyReadonly();
+  atualizarClasses(true);
+}
+
+// ── GALERIA DE FOTOS ──
+let fotosAtuais = []; // array de base64
+
+function renderGaleria() {
+  const wrap = document.getElementById('galeriaFotos');
+  if (!wrap) return;
+  const isMestreLocal = !document.body.classList.contains('readonly');
+  wrap.innerHTML = '';
+  fotosAtuais.forEach((src, i) => {
+    const thumb = document.createElement('div');
+    thumb.className = 'galeria-thumb';
+    thumb.innerHTML = `<img src="${src}" alt="Foto ${i+1}">`;
+    thumb.querySelector('img').addEventListener('click', () => abrirLightbox(fotosAtuais, i));
+    if (isMestreLocal) {
+      const del = document.createElement('button');
+      del.className = 'galeria-del';
+      del.textContent = '×';
+      del.title = 'Remover foto';
+      del.addEventListener('click', (e) => { e.stopPropagation(); removerFoto(i); });
+      thumb.appendChild(del);
+    }
+    wrap.appendChild(thumb);
+  });
+  if (isMestreLocal) {
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'galeria-add-btn';
+    addBtn.id = 'btnAdicionarFoto';
+    addBtn.title = 'Adicionar foto';
+    addBtn.textContent = '+';
+    addBtn.addEventListener('click', () => document.getElementById('f_foto_input').click());
+    wrap.appendChild(addBtn);
+  }
+}
+
+function onFotoSelecionada(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 3 * 1024 * 1024) {
+    showToast('Imagem muito grande! Use uma menor que 3MB.');
+    event.target.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    abrirCrop(e.target.result);
+    event.target.value = '';
+  };
+  reader.readAsDataURL(file);
+}
+window.onFotoSelecionada = onFotoSelecionada;
+
+function removerFoto(i) {
+  fotosAtuais.splice(i, 1);
+  renderGaleria();
+}
+window.removerFoto = removerFoto;
+
+// ── CROP ──
+let cropImgSrc = '';
+let cropScale = 1, cropX = 0, cropY = 0;
+let cropDragging = false, cropStartX = 0, cropStartY = 0, cropOrigX = 0, cropOrigY = 0;
+
+function abrirCrop(src) {
+  cropImgSrc = src;
+  cropScale = 1; cropX = 0; cropY = 0;
+  const img = document.getElementById('cropImg');
+  img.src = src;
+  img.onload = () => {
+    const area = document.getElementById('cropArea');
+    const scaleW = area.clientWidth / img.naturalWidth;
+    const scaleH = area.clientHeight / img.naturalHeight;
+    cropScale = Math.max(scaleW, scaleH);
+    document.getElementById('cropZoomRange').value = cropScale;
+    document.getElementById('cropZoomRange').min = Math.min(0.1, cropScale * 0.5);
+    applyCropTransform();
+  };
+  document.getElementById('cropModal').classList.add('open');
+}
+
+function applyCropTransform() {
+  const img = document.getElementById('cropImg');
+  img.style.transform = `translate(${cropX}px, ${cropY}px) scale(${cropScale})`;
+  img.style.transformOrigin = '0 0';
+}
+
+function onCropZoom() {
+  cropScale = parseFloat(document.getElementById('cropZoomRange').value);
+  applyCropTransform();
+}
+window.onCropZoom = onCropZoom;
+
+// Drag no crop
+const cropArea = document.getElementById('cropArea');
+if (cropArea) {
+  cropArea.addEventListener('mousedown', e => { cropDragging=true; cropStartX=e.clientX; cropStartY=e.clientY; cropOrigX=cropX; cropOrigY=cropY; e.preventDefault(); });
+  cropArea.addEventListener('touchstart', e => { cropDragging=true; cropStartX=e.touches[0].clientX; cropStartY=e.touches[0].clientY; cropOrigX=cropX; cropOrigY=cropY; }, {passive:true});
+  document.addEventListener('mousemove', e => { if(!cropDragging) return; cropX=cropOrigX+(e.clientX-cropStartX); cropY=cropOrigY+(e.clientY-cropStartY); applyCropTransform(); });
+  document.addEventListener('touchmove', e => { if(!cropDragging) return; cropX=cropOrigX+(e.touches[0].clientX-cropStartX); cropY=cropOrigY+(e.touches[0].clientY-cropStartY); applyCropTransform(); }, {passive:true});
+  document.addEventListener('mouseup', () => cropDragging=false);
+  document.addEventListener('touchend', () => cropDragging=false);
+  cropArea.addEventListener('wheel', e => {
+    e.preventDefault();
+    cropScale = Math.max(0.1, cropScale + (e.deltaY < 0 ? 0.1 : -0.1));
+    document.getElementById('cropZoomRange').value = cropScale;
+    applyCropTransform();
+  }, {passive:false});
+}
+
+function fecharCrop() { document.getElementById('cropModal').classList.remove('open'); }
+window.fecharCrop = fecharCrop;
+
+function confirmarCrop() {
+  // Render visible crop area to canvas
+  const area = document.getElementById('cropArea');
+  const img  = document.getElementById('cropImg');
+  const canvas = document.createElement('canvas');
+  canvas.width  = area.clientWidth;
+  canvas.height = area.clientHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img,
+    -cropX / cropScale, -cropY / cropScale,
+    area.clientWidth / cropScale, area.clientHeight / cropScale,
+    0, 0, canvas.width, canvas.height
+  );
+  const MAX = 600;
+  let finalCanvas = canvas;
+  if (canvas.width > MAX || canvas.height > MAX) {
+    const ratio = Math.min(MAX/canvas.width, MAX/canvas.height);
+    const resized = document.createElement('canvas');
+    resized.width  = Math.round(canvas.width * ratio);
+    resized.height = Math.round(canvas.height * ratio);
+    resized.getContext('2d').drawImage(canvas, 0, 0, resized.width, resized.height);
+    finalCanvas = resized;
+  }
+  const dataUrl = finalCanvas.toDataURL('image/jpeg', 0.72);
+  fotosAtuais.push(dataUrl);
+  renderGaleria();
+  fecharCrop();
+  salvarAtual(); // autosave
+}
+window.confirmarCrop = confirmarCrop;
+
+// ── LIGHTBOX ──
+let lbFotos = [], lbIdx = 0, lbScale = 1, lbX = 0, lbY = 0;
+let lbDrag = false, lbSX = 0, lbSY = 0, lbOX = 0, lbOY = 0;
+
+function abrirLightbox(fotos, idx) {
+  lbFotos = fotos; lbIdx = idx;
+  lbScale = 1; lbX = 0; lbY = 0;
+  document.getElementById('lightbox').classList.add('open');
+  updateLightboxImg();
+}
+window.abrirLightbox = abrirLightbox;
+
+function updateLightboxImg() {
+  const img = document.getElementById('lightboxImg');
+  img.src = lbFotos[lbIdx];
+  applyLightboxTransform();
+  document.getElementById('lightboxZoomLabel').textContent = Math.round(lbScale*100)+'%';
+  document.getElementById('lightbox').querySelector('.lightbox-prev').style.display = lbFotos.length > 1 ? '' : 'none';
+  document.getElementById('lightbox').querySelector('.lightbox-next').style.display = lbFotos.length > 1 ? '' : 'none';
+}
+
+function applyLightboxTransform() {
+  document.getElementById('lightboxImg').style.transform = `translate(${lbX}px,${lbY}px) scale(${lbScale})`;
+  document.getElementById('lightboxZoomLabel').textContent = Math.round(lbScale*100)+'%';
+}
+
+function lightboxZoom(delta) {
+  lbScale = Math.max(0.2, Math.min(8, lbScale + delta));
+  applyLightboxTransform();
+}
+window.lightboxZoom = lightboxZoom;
+
+function lightboxNav(dir) {
+  lbIdx = (lbIdx + dir + lbFotos.length) % lbFotos.length;
+  lbScale = 1; lbX = 0; lbY = 0;
+  updateLightboxImg();
+}
+window.lightboxNav = lightboxNav;
+
+function lightboxReset() { lbScale=1; lbX=0; lbY=0; applyLightboxTransform(); }
+window.lightboxReset = lightboxReset;
+
+function fecharLightbox() { document.getElementById('lightbox').classList.remove('open'); }
+window.fecharLightbox = fecharLightbox;
+
+document.getElementById('lightbox').addEventListener('click', e => { if(e.target===e.currentTarget||e.target.id==='lightboxWrap') fecharLightbox(); });
+
+// Drag lightbox
+const lbWrap = document.getElementById('lightboxWrap');
+lbWrap.addEventListener('mousedown', e => { lbDrag=true; lbSX=e.clientX; lbSY=e.clientY; lbOX=lbX; lbOY=lbY; e.preventDefault(); });
+lbWrap.addEventListener('touchstart', e => { lbDrag=true; lbSX=e.touches[0].clientX; lbSY=e.touches[0].clientY; lbOX=lbX; lbOY=lbY; }, {passive:true});
+document.addEventListener('mousemove', e => { if(!lbDrag) return; lbX=lbOX+(e.clientX-lbSX); lbY=lbOY+(e.clientY-lbSY); applyLightboxTransform(); });
+document.addEventListener('touchmove', e => { if(!lbDrag) return; lbX=lbOX+(e.touches[0].clientX-lbSX); lbY=lbOY+(e.touches[0].clientY-lbSY); applyLightboxTransform(); }, {passive:true});
+document.addEventListener('mouseup', () => lbDrag=false);
+document.addEventListener('touchend', () => lbDrag=false);
+lbWrap.addEventListener('wheel', e => { e.preventDefault(); lightboxZoom(e.deltaY<0?0.2:-0.2); }, {passive:false});
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('lightbox').classList.contains('open')) return;
+  if (e.key==='Escape') fecharLightbox();
+  if (e.key==='ArrowLeft') lightboxNav(-1);
+  if (e.key==='ArrowRight') lightboxNav(1);
+});
+
+
+// ── PERÍCIAS NORMAIS E AUTOMAÇÃO DE CLASSES ──
+function renderPericiasNormais(valores) {
+  const lista = document.getElementById('periciasNormais');
+  if (!lista) return;
+  lista.innerHTML = '';
+  (valores || []).forEach(reg => {
+    const itemData = typeof reg === 'string' ? {nome:reg, origem:'manual'} : (reg || {});
+    const item = document.createElement('div');
+    item.className = 'perk-item';
+    item.dataset.origem = itemData.origem || 'manual';
+    const input = document.createElement('input');
+    input.type = 'text'; input.placeholder = 'Descreva a perícia normal...'; input.value = itemData.nome || '';
+    item.appendChild(input);
+    if (item.dataset.origem !== 'manual') {
+      const tag = document.createElement('span'); tag.className = 'auto-perk-tag';
+      tag.textContent = item.dataset.origem === 'multiclasse' ? 'MULTICLASSE' : 'CLASSE'; item.appendChild(tag);
+    }
+    const del = document.createElement('button'); del.className = 'perk-remove'; del.type = 'button'; del.textContent = '×'; del.title = 'Remover perícia';
+    del.onclick = () => item.remove(); item.appendChild(del);
+    lista.appendChild(item);
+  });
+  if (!isMestre) applyReadonly();
+}
+function addPericiaNormal(nome='') {
+  if (!isMestre) return;
+  const atuais = [...document.querySelectorAll('#periciasNormais .perk-item')].map(el => ({nome:el.querySelector('input')?.value||'',origem:el.dataset.origem||'manual'}));
+  atuais.push({nome,origem:'manual'}); renderPericiasNormais(atuais);
+  const inputs = document.querySelectorAll('#periciasNormais input'); if (inputs.length) inputs[inputs.length-1].focus();
+}
+window.addPericiaNormal = addPericiaNormal;
+function lerPericiasNormaisDOM() {
+  return [...document.querySelectorAll('#periciasNormais .perk-item')].map(el => ({
+    nome: (el.querySelector('input')?.value || '').trim(), origem: el.dataset.origem || 'manual'
+  })).filter(x => x.nome);
+}
+function somarMapa(destino, origem) {
+  Object.entries(origem || {}).forEach(([nome, valor]) => {
+    destino[nome] = (destino[nome] || 0) + Number(valor || 0);
+    if (!destino[nome]) delete destino[nome];
+  });
+}
+function formatarModificadores(mapa, classe) {
+  const el = document.getElementById(classe);
+  if (!el) return;
+  const itens = Object.entries(mapa || {}).filter(([,v]) => Number(v)).sort((a,b)=>a[0].localeCompare(b[0],'pt-BR'));
+  el.innerHTML = '';
+  if (!itens.length) { const vazio=document.createElement('span'); vazio.className='auto-note'; vazio.textContent='Nenhum modificador.'; el.appendChild(vazio); return; }
+  itens.forEach(([nome,valor]) => {
+    const chip=document.createElement('span'); chip.className='class-mod-chip ' + (valor > 0 ? 'buff':'debuff');
+    chip.textContent=nome+' '+(valor>0?'+':'')+valor; el.appendChild(chip);
+  });
+}
+function habilidadeAtualDoCard(card) {
+  return {
+    nome: card.querySelector('.hab-nome')?.value || '',
+    tipo: card.querySelector('.hab-tipo')?.value || '',
+    efeito: card.querySelector('.hab-efeito')?.value || '',
+    autoKey: card.dataset.autoKey || '',
+    gasto: {qtd:card.querySelector('.hg-qtd')?.value||'',tipo:card.querySelector('.hg-tipo')?.value||'',obs:card.querySelector('.hg-obs')?.value||''}
+  };
+}
+async function atualizarClasses(silencioso=false) {
+  const classe1 = document.getElementById('f_classe')?.value || '';
+  const classe2 = document.getElementById('f_classe2')?.value || '';
+  const info = document.getElementById('multiclasseInfo');
+  const hidden = document.getElementById('f_mc_classe');
+  const anteriores = lerPericiasNormaisDOM().filter(x => x.origem === 'manual');
+  const habilidadesManuais = [...document.querySelectorAll('#habilidadesBody .hab-card')].map(habilidadeAtualDoCard).filter(h => !h.autoKey);
+  const buffs = {}, debuffs = {};
+  const periciasAuto = [];
+  const habilidadesAuto = [];
+  const selecionadas = [classe1, classe2].filter((nome, indice, lista) => nome && lista.indexOf(nome) === indice);
+  selecionadas.forEach(nome => {
+    const c = CLASSES_MAP.get(nome.toLocaleLowerCase('pt-BR'));
+    if (!c) return;
+    somarMapa(buffs, c.buffs); somarMapa(debuffs, c.debuffs);
+    (c.skills || []).forEach(p => periciasAuto.push({nome:p,origem:'classe'}));
+    if (c.abilityName || c.ability) habilidadesAuto.push({nome:c.abilityName || ('Habilidade de ' + c.name), tipo:'Classe', efeito:c.ability || '', autoKey:'classe:'+c.name});
+  });
+
+  let mult = null;
+  if (classe1 && classe2 && classe1 === classe2) {
+    if (hidden) hidden.value='';
+    if (info) info.textContent='Escolha duas classes diferentes para formar uma multiclasse.';
+  } else if (classe1 && classe2) {
+    const pronta = await MULTICLASSES_PROMISE;
+    mult = pronto ? MULTICLASSES_MAP.get(chaveMulticlasse(classe1, classe2)) : null;
+    if (mult) {
+      somarMapa(buffs, mult.buffs); somarMapa(debuffs, mult.debuffs);
+      (mult.skills || []).forEach(p => periciasAuto.push({nome:p,origem:'multiclasse'}));
+      if (mult.abilityName || mult.ability) habilidadesAuto.push({nome:mult.abilityName || mult.titulo, tipo:'Multiclasse', efeito:mult.ability || '', autoKey:'multiclasse:'+chaveMulticlasse(classe1,classe2)});
+      if (hidden) hidden.value = mult.titulo;
+      if (info) { info.textContent=''; const strong=document.createElement('strong'); strong.textContent=mult.titulo; info.appendChild(strong); const small=document.createElement('small'); small.textContent='Combinação reconhecida automaticamente.'; info.appendChild(small); }
+    } else {
+      if (hidden) hidden.value='';
+      if (info) info.textContent = MULTICLASSES_PRONTAS ? 'Combinação não encontrada no arquivo de multiclasses.' : 'Não foi possível carregar multiclasse_mecanicas.json. Confira se ele está na mesma pasta do index.html.';
+    }
+  } else {
+    if (hidden) hidden.value='';
+    if (info) info.textContent = classe1 || classe2 ? 'Escolha uma segunda classe para gerar a multiclasse automaticamente.' : 'Selecione duas classes para descobrir a multiclasse.';
+  }
+
+  const unicos = new Set();
+  const todos = [...anteriores];
+  periciasAuto.forEach(p => {
+    const k = p.nome.toLocaleLowerCase('pt-BR');
+    if (unicos.has(k) || todos.some(x=>x.nome.toLocaleLowerCase('pt-BR')===k)) return;
+    unicos.add(k); todos.push(p);
+  });
+  renderPericiasNormais(todos);
+  formatarModificadores(buffs, 'classeBuffs');
+  formatarModificadores(debuffs, 'classeDebuffs');
+
+  const habs = [...habilidadesManuais, ...habilidadesAuto];
+  renderTableRows('habilidadesBody', habs, ['nome','tipo','efeito'], ['Nome','Tipo','Efeito']);
+  if (!isMestre) applyReadonly();
+  if (!silencioso && isMestre && editingId) salvarAtual().catch(err=>console.error('Falha ao salvar as classes:',err));
+}
+window.atualizarClasses = atualizarClasses;
+document.getElementById('f_classe').addEventListener('change', () => atualizarClasses());
+document.getElementById('f_classe2').addEventListener('change', () => atualizarClasses());
+
+function readFichaFromForm() {
+  const v = id => (document.getElementById(id) || {}).value || '';
+  const extraFields = [];
+  document.querySelectorAll('#extraFields .extra-row').forEach(row => {
+    extraFields.push([...row.querySelectorAll('input')].map(i => i.value));
+  });
+  const especiais = [...document.querySelectorAll('#especiais input')].map(i => i.value);
+  const supremas  = [...document.querySelectorAll('#supremas input')].map(i => i.value);
+  const itens = [...document.querySelectorAll('#itensBody tr')].map(tr => {
+    const ins = tr.querySelectorAll('input, textarea');
+    return { nome: ins[0]?.value||'', qtd: ins[1]?.value||'', desc: ins[2]?.value||'' };
+  });
+  const habilidades = [...document.querySelectorAll('#habilidadesBody .hab-card')].map(card => ({
+    nome: card.querySelector('.hab-nome')?.value||'',
+    tipo: card.querySelector('.hab-tipo')?.value||'',
+    efeito: card.querySelector('.hab-efeito')?.value||'',
+    autoKey: card.dataset.autoKey || '',
+    gasto: { qtd: card.querySelector('.hg-qtd')?.value||'', tipo: card.querySelector('.hg-tipo')?.value||'', obs: card.querySelector('.hg-obs')?.value||'' }
+  }));
+  const pericias_normais = lerPericiasNormaisDOM();
+  return {
+    id: editingId,
+    nome: v('f_nome')||'Sem nome', lvl: +v('f_lvl'), forca: +v('f_forca'),
+    resist: +v('f_resist'), agilidade: +v('f_agilidade'), velocidade: +v('f_velocidade'),
+    vida_txt1: v('f_vida_txt1'), vida_txt2: v('f_vida_txt2'),
+    sanidade: v('f_sanidade'), modificador: v('f_modificador'),
+    qi: +v('f_qi'), ca: v('f_ca'), vida_num: +v('f_vida_num'),
+    combate: +v('f_combate'), caminho: v('f_caminho'), stamina: +v('f_stamina'),
+    dano_critico: v('f_dano_critico'),
+    extraFields, classe: v('f_classe'), classe2: v('f_classe2'),
+    mc_classe: v('f_mc_classe'),
+    pericia: pericias_normais.map(p=>p.nome).join(' | '), pericias_normais, raca: v('f_raca'),
+    especiais, supremas, itens, habilidades,
+    fotos: fotosAtuais.slice()
+  };
+}
+
+async function salvarFicha() {
+  if (!isMestre) return;
+  const data = readFichaFromForm();
+  const idx = fichas.findIndex(x => x.id === editingId);
+  if (idx >= 0) fichas[idx] = data;
+  await set(ref(db, 'fichas/' + data.id), data);
+  showToast('Ficha salva!');
+  goHome();
+}
+window.salvarFicha = salvarFicha;
+
+function renderHome() {
+  const list  = document.getElementById('fichaList');
+  const empty = document.getElementById('emptyMsg');
+  const hint  = document.getElementById('emptyHint');
+  if (!fichas.length) {
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    hint.textContent = isMestre
+      ? 'Clique em "Nova Ficha" para começar.'
+      : 'O mestre ainda não criou nenhuma ficha.';
+    return;
+  }
+  empty.style.display = 'none';  list.innerHTML = fichas.map(f => {
+    const initials = (f.nome||'?').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    const fotos = Array.isArray(f.fotos) ? f.fotos : (f.foto ? [f.foto] : []);
+    const avatarContent = fotos.length
+      ? `<div class="avatar-fotos">${fotos.slice(0,3).map((src,i)=>`<div class="avatar-foto" onclick="event.stopPropagation();abrirLightbox(${JSON.stringify(fotos).replace(/"/g,'&quot;')},${i})"><img src="${src}" alt=""></div>`).join('')}</div>`
+      : `<div class="avatar-initials">${esc(initials)}</div>`;
+    const editBtn  = isMestre
+      ? `<button class="btn-icon" onclick="editFicha('${f.id}')" title="Editar">✏️</button>`
+      : `<button class="btn-icon" onclick="editFicha('${f.id}')" title="Ver ficha">👁</button>`;
+    const delBtn = isMestre
+      ? `<button class="btn-icon btn-danger" onclick="deleteFicha('${f.id}')" title="Excluir">🗑</button>`
+      : '';
+    return `<div class="ficha-item">
+      <div class="ficha-item-left">
+        <div style="display:flex;align-items:center">${avatarContent}</div>
+        <div>
+          <div class="ficha-name">${esc(f.nome)}</div>
+          <div class="ficha-meta">LVL ${f.lvl||0}${f.caminho?' · '+esc(f.caminho):''}${f.raca?' · '+esc(f.raca):''}</div>
+        </div>
+      </div>
+      <div class="ficha-actions">${editBtn}${delBtn}</div>
+    </div>`;
+  }).join('');
+}
+
+function addExtraField(vals) {
+  const row = document.createElement('div');
+  row.className = 'extra-row';
+  row.innerHTML = `
+    <input type="text" placeholder="Campo" value="${esc(vals ? vals[0] : '')}">
+    <input type="text" placeholder="Valor" value="${esc(vals ? vals[1] : '')}">
+    <button class="btn-icon btn-danger" onclick="this.parentElement.remove()">×</button>`;
+  document.getElementById('extraFields').appendChild(row);
+}
+window.addExtraField = addExtraField;
+
+function addPerk(listId) {
+  const list = document.getElementById(listId);
+  const item = document.createElement('div');
+  item.className = 'perk-item';
+  item.innerHTML = `
+    <input type="text" placeholder="Descreva a perícia...">
+    <button class="perk-remove" onclick="this.parentElement.remove()">×</button>`;
+  list.appendChild(item);
+}
+window.addPerk = addPerk;
+
+const PERICIAS_ESPECIAIS = ['Investigação','Domesticação','Atuação','Iniciativa','Intuição','Pilotagem','Pontaria','Criptografia','Trapaça','Caçada','Arremesso','Combo','Armadilhas','Fundição','Desarme','Zoologia','Negociação','Fôlego','Carisma','Debate','Criminologia','Instinto de Caçador','Simulação Mental'];
+
+let PERICIAS_CUSTOM = [];
+onValue(ref(db, 'pericias_custom'), snap => {
+  PERICIAS_CUSTOM = snap.exists() ? Object.values(snap.val()).map(x => x && x.nome).filter(Boolean) : [];
+  const ov = document.getElementById('ppOverlay');
+  if (ov && ov.classList.contains('open')) renderPickerPericias();
+});
+function todasPericias() {
+  const base = PERICIAS_ESPECIAIS.map(n => n.toLowerCase());
+  const extras = PERICIAS_CUSTOM.filter((n, i) => !base.includes(n.toLowerCase()) && PERICIAS_CUSTOM.findIndex(x => x.toLowerCase() === n.toLowerCase()) === i);
+  return PERICIAS_ESPECIAIS.concat(extras);
+}
+function criarPericiaNova() {
+  const inp = document.getElementById('ppNova');
+  const nome = (inp.value || '').trim();
+  if (!nome) return;
+  let final = todasPericias().find(n => n.toLowerCase() === nome.toLowerCase());
+  if (!final) {
+    final = nome;
+    const id = '_' + Math.random().toString(36).slice(2, 9);
+    PERICIAS_CUSTOM.push(nome);
+    set(ref(db, 'pericias_custom/' + id), { id, nome }).catch(() => {});
+  }
+  if (!periciasAtuais().includes(final.toLowerCase())) addPericiaEspecial(final);
+  inp.value = '';
+  document.getElementById('ppSearch').value = '';
+  renderPickerPericias();
+}
+window.criarPericiaNova = criarPericiaNova;
+
+function periciasAtuais() {
+  return [...document.querySelectorAll('#especiais input')].map(i => i.value.trim().toLowerCase());
+}
+function renderPickerPericias() {
+  const q = (document.getElementById('ppSearch').value || '').toLowerCase().trim();
+  const atuais = periciasAtuais();
+  const list = document.getElementById('ppList');
+  list.innerHTML = '';
+  todasPericias().filter(n => n.toLowerCase().includes(q)).forEach(nome => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'pp-chip' + (atuais.includes(nome.toLowerCase()) ? ' added' : '');
+    b.textContent = nome;
+    b.onclick = () => { addPericiaEspecial(nome); renderPickerPericias(); };
+    list.appendChild(b);
+  });
+}
+function addPericiaEspecial(nome) {
+  const list = document.getElementById('especiais');
+  const item = document.createElement('div');
+  item.className = 'perk-item';
+  item.innerHTML = '<input type="text" placeholder="Descreva a perícia..."><button class="perk-remove" onclick="this.parentElement.remove()">×</button>';
+  item.querySelector('input').value = nome;
+  list.appendChild(item);
+}
+function abrirPickerPericias() {
+  document.getElementById('ppSearch').value = '';
+  renderPickerPericias();
+  document.getElementById('ppOverlay').classList.add('open');
+}
+function fecharPickerPericias() { document.getElementById('ppOverlay').classList.remove('open'); }
+window.abrirPickerPericias = abrirPickerPericias;
+window.fecharPickerPericias = fecharPickerPericias;
+window.renderPickerPericias = renderPickerPericias;
+
+
+function renderPerks(listId, vals) {
+  const list = document.getElementById(listId);
+  list.innerHTML = '';
+  vals.forEach(v => {
+    const item = document.createElement('div');
+    item.className = 'perk-item';
+    item.innerHTML = `
+      <input type="text" value="${esc(v)}" placeholder="Descreva a perícia...">
+      <button class="perk-remove" onclick="this.parentElement.remove()">×</button>`;
+    list.appendChild(item);
+  });
+}
+
+function addItem() {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><textarea rows="2" placeholder="Nome do item"></textarea></td>
+    <td><input type="text" placeholder="1"></td>
+    <td><textarea rows="2" placeholder="Descrição"></textarea></td>
+    <td><button class="btn-icon btn-danger" onclick="this.closest('tr').remove()">×</button></td>`;
+  document.getElementById('itensBody').appendChild(tr);
+}
+window.addItem = addItem;
+
+function criarHabCard(nome, tipo, efeito, gasto, autoKey) {
+  gasto = gasto || {};
+  const card = document.createElement('div');
+  card.className = 'hab-card';
+  if (autoKey) card.dataset.autoKey = autoKey;
+  card.innerHTML = `
+    <div class="hab-card-header">
+      <input type="text" class="hab-nome" placeholder="Nome da habilidade" value="${esc(nome||'')}">
+      <input type="text" class="hab-tipo" placeholder="Tipo" value="${esc(tipo||'')}">
+      <button class="hab-del" onclick="this.closest('.hab-card').remove()">×</button>
+    </div>
+    <div class="hab-tabs"><button type="button" class="hab-tab on" data-t="e">Efeito</button><button type="button" class="hab-tab" data-t="g">⚡ Gasto</button></div>
+    <textarea class="hab-efeito" placeholder="Efeito / descrição..." rows="2">${esc(efeito||'')}</textarea>
+    <div class="hab-gasto">
+      <input type="text" class="hg-qtd" placeholder="Qtd" value="${esc(gasto.qtd||'')}">
+      <input type="text" class="hg-tipo" placeholder="Recurso (Energia, Vida, Mana...)" value="${esc(gasto.tipo||'')}">
+      <input type="text" class="hg-obs" placeholder="Observação (ex: por turno, recarga de 3 turnos)" value="${esc(gasto.obs||'')}">
+    </div>`;
+  card.querySelectorAll('.hab-tab').forEach(b=>b.onclick=()=>{
+    card.querySelectorAll('.hab-tab').forEach(x=>x.classList.toggle('on',x===b));
+    card.classList.toggle('t-gasto',b.dataset.t==='g');});
+  return card;
+}
+
+function addHabilidade() {
+  document.getElementById('habilidadesBody').appendChild(criarHabCard('','',''));
+  if (!isMestre) applyReadonly();
+}
+window.addHabilidade = addHabilidade;
+
+function renderTableRows(tbodyId, rows, keys, placeholders) {
+  const tbody = document.getElementById(tbodyId);
+  tbody.innerHTML = '';
+  // Habilidades usam cards, itens usam tabela
+  if (tbodyId === 'habilidadesBody') {
+    rows.forEach(r => tbody.appendChild(criarHabCard(r.nome||'', r.tipo||'', r.efeito||'', r.gasto, r.autoKey||'')));
+    return;
+  }
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = keys.map((k,i) =>
+      `<td><textarea rows="2" placeholder="${placeholders[i]}">${esc(r[k]||'')}</textarea></td>`
+    ).join('') +
+    `<td><button class="btn-icon btn-danger" onclick="this.closest('tr').remove()">×</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── AUTOSAVE ──
+async function salvarAtual() {
+  if (!isMestre || !editingId) return;
+  const data = readFichaFromForm();
+  const idx = fichas.findIndex(x => x.id === editingId);
+  if (idx >= 0) fichas[idx] = data;
+  await set(ref(db, 'fichas/' + data.id), data);
+  showToast('Salvo!');
+}
+window.salvarAtual = salvarAtual;
+
+// Autosave ao perder foco em qualquer input/textarea
+document.querySelectorAll('.screen').forEach(screen => {
+  screen.addEventListener('focusout', e => {
+    if (e.target.matches('input, textarea') && isMestre && editingId) {
+      salvarAtual();
+    }
+  });
+});
+
+
+// ── EXPORTAR FICHA ──
+function exportarFicha() {
+  const data = readFichaFromForm();
+  const linhas = [];
+  linhas.push('═'.repeat(50));
+  linhas.push('  ' + data.nome.toUpperCase());
+  linhas.push('═'.repeat(50));
+  linhas.push('');
+  linhas.push('LVL: '+(data.lvl||0)+'    Caminho: '+(data.caminho||'—')+'    Raça: '+(data.raca||'—'));
+  linhas.push('');
+  linhas.push('── ATRIBUTOS ──────────────────────────────────');
+  linhas.push('Força:       '+(data.forca||0));
+  linhas.push('Resistência: '+(data.resist||0));
+  linhas.push('Agilidade:   '+(data.agilidade||0));
+  linhas.push('Velocidade:  '+(data.velocidade||0));
+  linhas.push('QI:          '+(data.qi||0));
+  linhas.push('Stamina:     '+(data.stamina||0));
+  linhas.push('Combate:     '+(data.combate||0));
+  if (data.dano_critico) linhas.push('Dano Crítico: '+data.dano_critico);
+  linhas.push('');
+  linhas.push('── VIDA E ENERGIA ──────────────────────────────');
+  if (data.vida_txt1) linhas.push(data.vida_txt1);
+  if (data.vida_txt2) linhas.push(data.vida_txt2);
+  linhas.push('Vida: '+(data.vida_num||0)+'    CA: '+(data.ca||'—')+'    Sanidade: '+(data.sanidade||'—'));
+  if (data.modificador) linhas.push('Modificador: '+data.modificador);
+  linhas.push('');
+  linhas.push('── CLASSES ─────────────────────────────────────');
+  if (data.classe)  linhas.push('Classe: '+data.classe);
+  if (data.classe2) linhas.push('Classe 2: '+data.classe2);
+  if (data.mc_classe) linhas.push('Multiclasse: '+data.mc_classe);
+  if (data.pericia) linhas.push('Perícias Normais: '+data.pericia);
+  linhas.push('');
+  if ((data.extraFields||[]).length) {
+    linhas.push('── CAMPOS EXTRAS ───────────────────────────────');
+    data.extraFields.forEach(function(f){if(f[0]||f[1])linhas.push((f[0]||'')+': '+(f[1]||''));});
+    linhas.push('');
+  }
+  if ((data.especiais||[]).length) {
+    linhas.push('── PERÍCIAS ESPECIAIS ──────────────────────────');
+    data.especiais.forEach(function(p){if(p)linhas.push('• '+p);});
+    linhas.push('');
+  }
+  if ((data.supremas||[]).length) {
+    linhas.push('── PERÍCIAS SUPREMAS ───────────────────────────');
+    data.supremas.forEach(function(p){if(p)linhas.push('• '+p);});
+    linhas.push('');
+  }
+  if ((data.itens||[]).length) {
+    linhas.push('── ITENS ───────────────────────────────────────');
+    data.itens.forEach(function(i){
+      if(i.nome)linhas.push('• '+i.nome+(i.qtd?' (x'+i.qtd+')':'')+(i.desc?' — '+i.desc:''));
+    });
+    linhas.push('');
+  }
+  if ((data.habilidades||[]).length) {
+    linhas.push('── HABILIDADES ─────────────────────────────────');
+    data.habilidades.forEach(function(h){
+      if(h.nome){
+        linhas.push('');
+        linhas.push('['+( h.tipo||'—')+'] '+h.nome);
+        if(h.efeito)linhas.push('  '+h.efeito);
+        if(h.gasto&&(h.gasto.qtd||h.gasto.tipo))linhas.push('  Gasto: '+[h.gasto.qtd,h.gasto.tipo,h.gasto.obs?'('+h.gasto.obs+')':''].filter(Boolean).join(' '));
+      }
+    });
+    linhas.push('');
+  }
+  linhas.push('═'.repeat(50));
+  var txt = linhas.join('\n');
+
+  var modal = document.getElementById('exportModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'exportModal';
+    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:5000;align-items:center;justify-content:center;padding:1rem;flex-direction:column';
+    modal.innerHTML = [
+      '<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:20px;width:100%;max-width:600px;max-height:85vh;display:flex;flex-direction:column;gap:12px">',
+      '<div style="font-family:Cinzel,serif;font-size:14px;color:var(--gold);letter-spacing:.5px">&#128196; Exportar Ficha</div>',
+      '<textarea id="exportTxt" style="flex:1;min-height:300px;font-family:monospace;font-size:12px;resize:vertical;line-height:1.5;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);padding:10px" readonly></textarea>',
+      '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">',
+      '<button onclick="copiarExporte()" style="background:var(--bg3);border:1px solid var(--border2);color:var(--gold);font-family:Cinzel,serif;font-size:12px;padding:7px 16px;border-radius:var(--radius);cursor:pointer">&#128203; Copiar</button>',
+      '<button onclick="baixarExporte()" style="background:var(--bg3);border:1px solid var(--border2);color:var(--gold);font-family:Cinzel,serif;font-size:12px;padding:7px 16px;border-radius:var(--radius);cursor:pointer">&#11015; Baixar .txt</button>',
+      '<button onclick="document.getElementById(\'exportModal\').style.display=\'none\'" style="background:transparent;border:1px solid var(--border);color:var(--text3);font-family:Cinzel,serif;font-size:12px;padding:7px 16px;border-radius:var(--radius);cursor:pointer">Fechar</button>',
+      '</div></div>'
+    ].join('');
+    document.body.appendChild(modal);
+  }
+  document.getElementById('exportTxt').value = txt;
+  modal.style.display = 'flex';
+  modal._nomeAtual = data.nome;
+}
+window.exportarFicha = exportarFicha;
+
+window.copiarExporte = function() {
+  var area = document.getElementById('exportTxt');
+  area.select();
+  document.execCommand('copy');
+  showToast('Copiado!');
+};
+
+window.baixarExporte = function() {
+  var txt = document.getElementById('exportTxt').value;
+  var modal = document.getElementById('exportModal');
+  var nome = (modal._nomeAtual || 'ficha').replace(/[^a-z0-9]/gi,'_').toLowerCase();
+  var blob = new Blob([txt], {type:'text/plain;charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = nome + '.txt';
+  a.click();
+};
+
+
+// ── ROLAGEM DE DADOS ──
+let somaDadosAtual = 0;
+let historicoDados = [];
+const chaveDadosCustom = 'pathOfStars_dados_custom_' + (usuarioLogado || 'global');
+function lerDadosPersonalizados() {
+  try { const x = JSON.parse(localStorage.getItem(chaveDadosCustom) || '[]'); return Array.isArray(x) ? x : []; }
+  catch (_) { return []; }
+}
+function salvarDadosPersonalizados(lista) {
+  try { localStorage.setItem(chaveDadosCustom, JSON.stringify(lista)); }
+  catch (e) { console.warn('Não foi possível salvar os dados personalizados neste navegador.', e); }
+}
+function renderDadosPersonalizados() {
+  const select = document.getElementById('diceType'); if (!select) return;
+  const selecionado = select.value;
+  select.querySelectorAll('option[data-custom="1"]').forEach(o=>o.remove());
+  lerDadosPersonalizados().forEach(d => {
+    const op = document.createElement('option'); op.value = 'custom:' + d.id; op.dataset.custom='1'; op.textContent = d.nome + ' (D' + d.faces + ')'; select.appendChild(op);
+  });
+  if ([...select.options].some(o=>o.value===selecionado)) select.value=selecionado;
+}
+function criarDadoPersonalizado() {
+  const nomeEl=document.getElementById('customDiceName'), facesEl=document.getElementById('customDiceSides');
+  const nome=(nomeEl.value||'').trim(); const faces=Math.floor(Number(facesEl.value));
+  if (!nome) { showToast('Dê um nome ao dado.'); nomeEl.focus(); return; }
+  if (!Number.isFinite(faces) || faces < 2 || faces > 100000) { showToast('O dado precisa ter de 2 a 100.000 faces.'); facesEl.focus(); return; }
+  const dados=lerDadosPersonalizados(); const id='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  dados.push({id,nome,faces}); salvarDadosPersonalizados(dados); renderDadosPersonalizados();
+  document.getElementById('diceType').value='custom:'+id; nomeEl.value=''; showToast('Dado personalizado criado!');
+}
+window.criarDadoPersonalizado = criarDadoPersonalizado;
+function obterFacesDado(valor) {
+  if (String(valor).startsWith('custom:')) {
+    const d=lerDadosPersonalizados().find(x=>x.id===String(valor).slice(7)); return d ? {faces:d.faces,nome:d.nome} : null;
+  }
+  const faces=Number(valor); return Number.isFinite(faces) && faces >= 2 ? {faces,nome:'D'+faces} : null;
+}
+function rolarDados() {
+  const select=document.getElementById('diceType'); const countEl=document.getElementById('diceCount');
+  const dado=obterFacesDado(select.value); const quantidade=Math.floor(Number(countEl.value));
+  if (!dado) { showToast('Selecione um dado válido.'); return; }
+  if (!Number.isFinite(quantidade) || quantidade < 1 || quantidade > 30) { showToast('Escolha de 1 a 30 dados por rolagem.'); countEl.focus(); return; }
+  const botao=document.getElementById('diceRollBtn'); botao.disabled=true;
+  const resultados=Array.from({length:quantidade},()=>Math.floor(Math.random()*dado.faces)+1);
+  const parcial=resultados.reduce((a,b)=>a+b,0); somaDadosAtual+=parcial;
+  document.getElementById('diceTotal').textContent=String(somaDadosAtual);
+  document.getElementById('diceLastResult').textContent=String(resultados[resultados.length-1]);
+  document.getElementById('diceResultLabel').textContent=dado.nome+' · '+resultados.join(' + ')+' = '+parcial;
+  const cube=document.getElementById('diceCube'); const front=document.getElementById('diceCubeFront');
+  front.textContent=String(resultados[resultados.length-1]); cube.classList.remove('rolling'); void cube.offsetWidth; cube.classList.add('rolling');
+  const registro={nome:dado.nome,quantidade,resultados,parcial,quando:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})};
+  historicoDados.unshift(registro); historicoDados=historicoDados.slice(0,25); renderHistoricoDados();
+  window.setTimeout(()=>{cube.classList.remove('rolling');botao.disabled=false;},980);
+}
+window.rolarDados = rolarDados;
+function renderHistoricoDados() {
+  const el=document.getElementById('diceHistory'); if (!el) return;
+  el.innerHTML='';
+  if (!historicoDados.length) { const vazio=document.createElement('div'); vazio.className='auto-note'; vazio.textContent='Nenhuma rolagem realizada.'; el.appendChild(vazio); return; }
+  historicoDados.forEach(r=>{
+    const item=document.createElement('div'); item.className='dice-history-item';
+    const desc=document.createElement('span'); desc.textContent=r.quando+' · '+r.quantidade+'× '+r.nome+' · '+r.resultados.join(' + ');
+    const result=document.createElement('strong'); result.textContent='= '+r.parcial;
+    item.append(desc,result); el.appendChild(item);
+  });
+}
+function somarModificadorDados() {
+  const valor=Number(document.getElementById('diceModifier').value);
+  if (!Number.isFinite(valor)) { showToast('Digite um número válido.'); return; }
+  somaDadosAtual+=valor; document.getElementById('diceTotal').textContent=String(somaDadosAtual);
+  const registro={nome:'Modificador',quantidade:1,resultados:[valor],parcial:valor,quando:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})};
+  historicoDados.unshift(registro); historicoDados=historicoDados.slice(0,25); renderHistoricoDados();
+}
+window.somarModificadorDados = somarModificadorDados;
+function limparSomaDados() {
+  somaDadosAtual=0; historicoDados=[]; document.getElementById('diceTotal').textContent='0';
+  document.getElementById('diceLastResult').textContent='—'; document.getElementById('diceResultLabel').textContent='Aguardando rolagem';
+  document.getElementById('diceCubeFront').textContent='?'; document.getElementById('diceCube').classList.remove('rolling');
+  renderHistoricoDados();
+}
+window.limparSomaDados = limparSomaDados;
+function abrirDados() { renderDadosPersonalizados(); showScreen('diceScreen'); }
+window.abrirDados = abrirDados;
+renderDadosPersonalizados();
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.style.opacity = '0', 2200);
+}
+
+/* ─── INIT ─── */
+// Mostra home imediatamente, Firebase carrega em background
+document.getElementById('loadingOverlay').style.display = 'none';
+showScreen('home');
+renderHome();
+
+// Timeout de segurança — esconde loading após 3s mesmo sem Firebase
+setTimeout(() => {
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay && overlay.style.display !== 'none') {
+    overlay.style.display = 'none';
+    showScreen('home');
+    renderHome();
+  }
+}, 3000);
+</script>
+
+<!-- Picker de Perícias Especiais -->
+<div class="pp-overlay" id="ppOverlay" onclick="if(event.target===this)fecharPickerPericias()">
+  <div class="pp-box">
+    <div class="pp-head"><span>⭐ Escolher Perícia Especial</span><button class="btn-icon" onclick="fecharPickerPericias()">✕</button></div>
+    <input type="text" class="pp-search" id="ppSearch" placeholder="Buscar..." autocomplete="off" oninput="renderPickerPericias()">
+    <div class="pp-list" id="ppList"></div>
+    <div class="pp-novo"><input type="text" id="ppNova" placeholder="Criar nova perícia..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();criarPericiaNova();}"><button class="btn-primary" onclick="criarPericiaNova()">＋ Criar</button></div>
+    <div class="pp-foot">
+      <span></span>
+      <button class="btn-primary" onclick="fecharPickerPericias()">Concluir</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
